@@ -4,111 +4,68 @@ import expression.*;
 import expression.exceptions.*;
 
 public enum BasicBinaryOperations implements BinaryOperations {
-    ADD {
-        @Override
-        public int getOrder() {
-            return Add.ORDER;
-        }
-
+    ADD(Add.ORDER) {
         @Override
         public Operand create(Operand left, Operand right) {
             return new Add(left, right);
         }
-    }, CHECKED_ADD {
-        @Override
-        public int getOrder() {
-            return CheckedAdd.ORDER;
-        }
-
+    }, CHECKED_ADD(CheckedAdd.ORDER) {
         @Override
         public Operand create(Operand left, Operand right) {
             return new CheckedAdd(left, right);
         }
-    }, SUBTRACT {
-        // :NOTE: getOrder -> order
-        @Override
-        public int getOrder() {
-            return Subtract.ORDER;
-        }
-
+    }, SUBTRACT(Subtract.ORDER) {
         @Override
         public Operand create(Operand left, Operand right) {
             return new Subtract(left, right);
         }
-    }, CHECKED_SUBTRACT {
-        @Override
-        public int getOrder() {
-            return CheckedSubtract.ORDER;
-        }
-
+    }, CHECKED_SUBTRACT(CheckedSubtract.ORDER) {
         @Override
         public Operand create(Operand left, Operand right) {
             return new CheckedSubtract(left, right);
         }
-    }, MULTIPLY {
-        @Override
-        public int getOrder() {
-            return Multiply.ORDER;
-        }
-
+    }, MULTIPLY(Multiply.ORDER) {
         @Override
         public Operand create(Operand left, Operand right) {
             return new Multiply(left, right);
         }
-    }, CHECKED_MULTIPLY {
-        @Override
-        public int getOrder() {
-            return CheckedMultiply.ORDER;
-        }
-
+    }, CHECKED_MULTIPLY(CheckedMultiply.ORDER) {
         @Override
         public Operand create(Operand left, Operand right) {
             return new CheckedMultiply(left, right);
         }
-    }, DIVIDE {
-        @Override
-        public int getOrder() {
-            return Divide.ORDER;
-        }
-
+    }, DIVIDE(Divide.ORDER) {
         @Override
         public Operand create(Operand left, Operand right) {
             return new Divide(left, right);
         }
-    }, CHECKED_DIVIDE {
-        @Override
-        public int getOrder() {
-            return CheckedDivide.ORDER;
-        }
-
+    }, CHECKED_DIVIDE(CheckedDivide.ORDER) {
         @Override
         public Operand create(Operand left, Operand right) {
             return new CheckedDivide(left, right);
         }
-    }, SET {
-        @Override
-        public int getOrder() {
-            return Set.ORDER;
-        }
-
+    }, SET(Set.ORDER) {
         @Override
         public Operand create(Operand left, Operand right) {
             return new Set(left, right);
         }
-    }, CLEAR {
-        @Override
-        public int getOrder() {
-            return Clear.ORDER;
-        }
-
+    }, CLEAR(Clear.ORDER) {
         @Override
         public Operand create(Operand left, Operand right) {
             return new Clear(left, right);
         }
     };
 
+    private final int order;
+
+    BasicBinaryOperations(final int order) {
+        this.order = order;
+    }
+
     @Override
-    public abstract int getOrder();
+    public int getOrder() {
+        return order;
+    }
 
     @Override
     public abstract Operand create(final Operand left, final Operand right);
