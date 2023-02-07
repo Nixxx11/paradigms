@@ -17,12 +17,15 @@ _*
 # Do not store idea project file
 /paradigms.iml
 
+# Do not store out
+/out/
+
 /java-solutions/base/
 /java-solutions/expression/common/
-/java-solutions/expression/ToMiniString.java
-/java-solutions/expression/TripleExpression.java
-/java-solutions/expression/DoubleExpression.java
 /java-solutions/expression/Expression.java
+/java-solutions/expression/ToMiniString.java
+/java-solutions/expression/DoubleExpression.java
+/java-solutions/expression/TripleExpression.java
 /java-solutions/expression/parser/TripleParser.java
-/java-solutions/expression/exceptions/TripleParser.java
 /java-solutions/expression/parser/Operations.java
+/java-solutions/expression/exceptions/TripleParser.java
