@@ -3,11 +3,13 @@ package expression.parser;
 import expression.*;
 
 import java.util.Map;
+import java.util.Objects;
 
 public class BasicExpressionParser extends BaseParser {
     protected final Map<String, BinaryOperations> binaryOperations;
     protected final Map<String, UnaryOperations> unaryOperations;
     protected BinaryOperations savedOp = null;
+    protected String savedToken = null;
 
     public BasicExpressionParser(
             final CharSource source,
@@ -21,8 +23,8 @@ public class BasicExpressionParser extends BaseParser {
 
     public TripleExpression parseExpression() throws ParsingException {
         final Operand result = parse();
-        if (!eof()) {
-            throw error(String.valueOf(CharSource.EOF), String.valueOf(take()));
+        if (!eof() || savedToken != null) {
+            throw error(String.valueOf(CharSource.EOF), getToken());
         }
         return result;
     }
@@ -69,7 +71,7 @@ public class BasicExpressionParser extends BaseParser {
                 token = sb.toString();
             }
         } else {
-            token = getIdentifier();
+            token = getToken();
         }
         if (unaryOperations.containsKey(token)) {
             return unaryOperations.get(token).create(getOperand());
@@ -78,8 +80,9 @@ public class BasicExpressionParser extends BaseParser {
             case "x", "y", "z" -> new Variable(token);
             case "(" -> {
                 final Operand result = parse();
-                if (!take(')')) {
-                    throw error(")", String.valueOf(take()));
+                String nextToken = getToken();
+                if (!Objects.equals(nextToken, ")")) {
+                    throw error(")", nextToken);
                 }
                 yield result;
             }
@@ -94,14 +97,19 @@ public class BasicExpressionParser extends BaseParser {
             return result;
         }
         skipWhitespace();
-        final String operation = getIdentifier();
+        final String operation = getToken();
         if (!binaryOperations.containsKey(operation)) {
             throw error("an operation", operation);
         }
         return binaryOperations.get(operation);
     }
 
-    protected String getIdentifier() {
+    protected String getToken() {
+        if (savedToken != null) {
+            String result = savedToken;
+            savedToken = null;
+            return result;
+        }
         if (Character.isJavaIdentifierStart(peek())) {
             final StringBuilder identifier = new StringBuilder();
             identifier.append(take());
@@ -121,7 +129,19 @@ public class BasicExpressionParser extends BaseParser {
 
     protected boolean hasNextOperation() {
         skipWhitespace();
-        // :NOTE: ')'
-        return savedOp != null || !(eof() || test(')'));
+        if (savedOp != null) {
+            return true;
+        }
+        if (eof()) {
+            return false;
+        }
+        String token = getToken();
+        if (binaryOperations.containsKey(token)) {
+            savedOp = binaryOperations.get(token);
+            return true;
+        } else {
+            savedToken = token;
+            return false;
+        }
     }
 }
