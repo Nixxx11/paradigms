@@ -9,9 +9,11 @@ public class BasicExpressionParser extends BaseParser {
     protected final Map<String, UnaryOperations> unaryOperations;
     protected BinaryOperations savedOp = null;
 
-    public BasicExpressionParser(final CharSource source,
-                                 final Map<String, BinaryOperations> binaryOperations,
-                                 final Map<String, UnaryOperations> unaryOperations) {
+    public BasicExpressionParser(
+            final CharSource source,
+            final Map<String, BinaryOperations> binaryOperations,
+            final Map<String, UnaryOperations> unaryOperations
+    ) {
         super(source);
         this.binaryOperations = binaryOperations;
         this.unaryOperations = unaryOperations;
@@ -119,6 +121,7 @@ public class BasicExpressionParser extends BaseParser {
 
     protected boolean hasNextOperation() {
         skipWhitespace();
+        // :NOTE: ')'
         return savedOp != null || !(eof() || test(')'));
     }
 }

@@ -25,6 +25,7 @@ public enum BasicBinaryOperations implements BinaryOperations {
             return new CheckedAdd(left, right);
         }
     }, SUBTRACT {
+        // :NOTE: getOrder -> order
         @Override
         public int getOrder() {
             return Subtract.ORDER;
