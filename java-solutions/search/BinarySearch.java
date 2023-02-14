@@ -144,25 +144,34 @@ public class BinarySearch {
         int x = Integer.parseInt(args[0]);
         int[] a = new int[args.length - 1];
         int j = 1;
+        int sum = x;
         // forall arg in args: arg can be parsed to integer
         // Inv: x == Integer.parseInt(args[0])
         //  && a.length == args.length - 1
         //  && forall i = 0...(j - 2): a[i] == Integer.parseInt(args[i + 1])
+        //  && sum = x + (a[0] + a[1] + ... + a[j - 2])
         //  && forall i = 2...(args.length - 1): Integer.parseInt(args[i - 1]) >= Integer.parseInt(args[i])
         while (j < args.length) {
             a[j - 1] = Integer.parseInt(args[j]);
+            sum += a[j - 1];
             j++;
         }
         // x == Integer.parseInt(args[0])
         //  && a.length == args.length - 1
         //  && forall i = 0...(args.length - 2): a[i] == Integer.parseInt(args[i + 1])
+        //  && sum = x + (a[0] + a[1] + ... + a[a.length - 1])
         //  && forall i = 2...(args.length - 1): Integer.parseInt(args[i - 1]) >= Integer.parseInt(args[i])
 
         // x == Integer.parseInt(args[0])
         //  && a.length == args.length - 1
         //  && forall i = 0...(args.length - 2): a[i] == Integer.parseInt(args[i + 1])
+        //  && sum = x + (a[0] + a[1] + ... + a[a.length - 1])
         //  && forall i = 1...(a.length - 1): a[i - 1] >= a[i]
-        System.out.println(iterativeSearch(a, x));
+        if (sum % 2 == 0) {
+            System.out.println(recursiveSearch(a, x));
+        } else {
+            System.out.println(iterativeSearch(a, x));
+        }
         // 0 <= R <= a.length
         //  && forall i = 0...(R - 1): a[i] > x
         //  && (R == a.length || a[R] <= x)
