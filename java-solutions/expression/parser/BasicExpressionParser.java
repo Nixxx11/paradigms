@@ -1,9 +1,11 @@
 package expression.parser;
 
-import expression.*;
+import expression.Const;
+import expression.Operand;
+import expression.TripleExpression;
+import expression.Variable;
 
 import java.util.Map;
-import java.util.Objects;
 
 public class BasicExpressionParser extends BaseParser {
     protected final Map<String, BinaryOperations> binaryOperations;
@@ -80,8 +82,8 @@ public class BasicExpressionParser extends BaseParser {
             case "x", "y", "z" -> new Variable(token);
             case "(" -> {
                 final Operand result = parse();
-                String nextToken = getToken();
-                if (!Objects.equals(nextToken, ")")) {
+                final String nextToken = getToken();
+                if (!")".equals(nextToken)) {
                     throw error(")", nextToken);
                 }
                 yield result;
