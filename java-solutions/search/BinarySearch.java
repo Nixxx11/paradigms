@@ -9,14 +9,11 @@ public class BinarySearch {
     //  && a' == a
     public static int iterativeSearch(int[] a, int x, int left, int right) {
         // Inv: 0 <= left <= left' <= right' <= right <= a.length
+        //  && right' - left' < right'' - left''    ('' - previous value)
         //  && (left' == left || a[left' - 1] > x)
         //  && (right' == right || a[right'] <= x)
         //  && forall i = (left + 1)...(right - 1): a[i - 1] >= a[i]
         while (left != right) {
-            // 0 <= left <= left' < right' <= right <= a.length
-            //  && (left' == left || a[left' - 1] > x)
-            //  && (right' == right || a[right'] <= x)
-            //  && forall i = (left + 1)...(right - 1): a[i - 1] >= a[i]
             int middle = (left + right) / 2;
             // 0 <= left <= left' <= middle < right' <= right <= a.length
             //  && (left' == left || a[left' - 1] > x)
@@ -29,6 +26,7 @@ public class BinarySearch {
                 //  && forall i = (left + 1)...(right - 1): a[i - 1] >= a[i]
                 right = middle;
                 // 0 <= left <= left' <= right' < right <= a.length
+                //  && right' - left' < right'' - left''
                 //  && (left' == left || a[left' - 1] > x)
                 //  && a[right'] <= x
                 //  && forall i = (left + 1)...(right - 1): a[i - 1] >= a[i]
@@ -39,11 +37,13 @@ public class BinarySearch {
                 //  && forall i = (left + 1)...(right - 1): a[i - 1] >= a[i]
                 left = middle + 1;
                 // 0 <= left < left' <= right' <= right <= a.length
+                //  && right' - left' < right'' - left''
                 //  && a[left' - 1] > x
                 //  && (right' == right || a[right'] <= x)
                 //  && forall i = (left + 1)...(right - 1): a[i - 1] >= a[i]
             }
             // 0 <= left <= left' <= right' <= right <= a.length
+            //  && right' - left' < right'' - left''
             //  && (left' == left || a[left' - 1] > x)
             //  && (right' == right || a[right'] <= x)
             //  && forall i = (left + 1)...(right - 1): a[i - 1] >= a[i]
@@ -138,6 +138,7 @@ public class BinarySearch {
     // Post: 0 <= R <= args.length - 1
     //  && forall i = 0...(R - 1): Integer.parseInt(args[i + 1]) > Integer.parseInt(args[0])
     //  && (R == args.length - 1 || Integer.parseInt(args[R + 1]) <= Integer.parseInt(args[0]))
+    //  && args' == args
     public static void main(String[] args) {
         // args.length >= 1 && forall arg in args: arg can be parsed to integer
         //  && forall i = 2...(args.length - 1): Integer.parseInt(args[i - 1]) >= Integer.parseInt(args[i])
@@ -145,8 +146,8 @@ public class BinarySearch {
         int[] a = new int[args.length - 1];
         int j = 1;
         int sum = x;
-        // forall arg in args: arg can be parsed to integer
-        // Inv: x == Integer.parseInt(args[0])
+        // Inv: forall arg in args: arg can be parsed to integer
+        //  && x == Integer.parseInt(args[0])
         //  && a.length == args.length - 1
         //  && forall i = 0...(j - 2): a[i] == Integer.parseInt(args[i + 1])
         //  && sum = x + (a[0] + a[1] + ... + a[j - 2])
@@ -158,7 +159,7 @@ public class BinarySearch {
         }
         // x == Integer.parseInt(args[0])
         //  && a.length == args.length - 1
-        //  && forall i = 0...(args.length - 2): a[i] == Integer.parseInt(args[i + 1])
+        //  && a = {a[i] = Integer.parseInt(args[i + 1])}
         //  && sum = x + (a[0] + a[1] + ... + a[a.length - 1])
         //  && forall i = 2...(args.length - 1): Integer.parseInt(args[i - 1]) >= Integer.parseInt(args[i])
 
