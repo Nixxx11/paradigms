@@ -1,0 +1,38 @@
+package queue;
+
+public class ArrayQueueADTTest {
+    private static void enqueueMultiple(ArrayQueueADT queue, int n) {
+        for (int i = 0; i < n; i++) {
+            ArrayQueueADT.enqueue(queue, String.valueOf(i));
+        }
+    }
+
+    private static void expect(ArrayQueueADT queue, String str) {
+        assert ArrayQueueADT.element(queue).equals(str);
+        assert ArrayQueueADT.dequeue(queue).equals(str);
+    }
+
+    private static void testClear(ArrayQueueADT queue) {
+        enqueueMultiple(queue, 10);
+        ArrayQueueADT.clear(queue);
+        assert ArrayQueueADT.size(queue) == 0 && ArrayQueueADT.isEmpty(queue);
+    }
+
+    private static void test(ArrayQueueADT queue) {
+        assert ArrayQueueADT.size(queue) == 0 && ArrayQueueADT.isEmpty(queue);
+        enqueueMultiple(queue, 15);
+        assert ArrayQueueADT.size(queue) == 15 && !ArrayQueueADT.isEmpty(queue);
+        for (int i = 14; i >= 0; i--) {
+            expect(queue, String.valueOf(i));
+            assert ArrayQueueADT.size(queue) == i;
+        }
+        assert ArrayQueueADT.isEmpty(queue);
+        testClear(queue);
+    }
+
+    public static void main(String[] args) {
+        ArrayQueueADT queue = ArrayQueueADT.create();
+        test(queue);
+        System.out.println("Finished testing ArrayQueueADT");
+    }
+}

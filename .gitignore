@@ -29,3 +29,7 @@ _*
 /java-solutions/expression/parser/TripleParser.java
 /java-solutions/expression/parser/Operations.java
 /java-solutions/expression/exceptions/TripleParser.java
+!/java-solutions/queue/ArrayQueueModuleTest.java
+!/java-solutions/queue/ArrayQueueADTTest.java
+!/java-solutions/queue/ArrayQueueMyTest.java
+/java-solutions/queue/Queues.java
