@@ -19,33 +19,30 @@ public class ArrayQueueADT {
         return queue;
     }
 
-    // Pre: obj != null
+    // Pre: obj != null && queue != null
     // Post: n' == n + 1 && immutable(n) && a'[n'] == obj
     public static void enqueue(ArrayQueueADT queue, Object obj) {
         Objects.requireNonNull(obj);
         ensureCapacity(queue, queue.size + 1);
-        int index = queue.start + queue.size;
-        if (index >= queue.arr.length) {
-            index -= queue.arr.length;
-        }
-        queue.arr[index] = obj;
         queue.size++;
+        queue.arr[last(queue)] = obj;
     }
 
-    // Pre: obj != null
+    // Pre: obj != null && queue != null
     // Post: n' == n + 1 && a'[1] = obj && forall i = 1...n: a'[i + 1] == a[i]
     public static void push(ArrayQueueADT queue, Object obj) {
         Objects.requireNonNull(obj);
         ensureCapacity(queue, queue.size + 1);
-        queue.start--;
-        if (queue.start < 0) {
-            queue.start += queue.arr.length;
+        if (queue.start == 0) {
+            queue.start = queue.arr.length - 1;
+        } else {
+            queue.start--;
         }
-        queue.arr[queue.start] = obj;
         queue.size++;
+        queue.arr[queue.start] = obj;
     }
 
-    // Pre: n >= 1
+    // Pre: queue != null && n >= 1
     // Post: R == a[1] && n' == n && immutable(n)
     public static Object element(ArrayQueueADT queue) {
         if (queue.size == 0) {
@@ -54,61 +51,55 @@ public class ArrayQueueADT {
         return queue.arr[queue.start];
     }
 
-    // Pre: n >= 1
+    // Pre: queue != null && n >= 1
     // Post: R == a[n] && n' == n && immutable(n)
     public static Object peek(ArrayQueueADT queue) {
         if (queue.size == 0) {
             throw new IndexOutOfBoundsException();
         }
-        int last = queue.start + queue.size - 1;
-        if (last >= queue.arr.length) {
-            last -= queue.arr.length;
-        }
-        return queue.arr[last];
+        return queue.arr[last(queue)];
     }
 
-    // Pre: n >= 1
+    // Pre: queue != null && n >= 1
     // Post: R == a[1] && n' == n - 1 && forall i = 1...n': a'[i] == a[i + 1]
     public static Object dequeue(ArrayQueueADT queue) {
-        Object result = element(queue);
+        final Object result = element(queue);
         queue.arr[queue.start] = null;
         queue.size--;
-        queue.start++;
-        if (queue.start == queue.arr.length) {
+        if (queue.start == queue.arr.length - 1) {
             queue.start = 0;
+        } else {
+            queue.start++;
         }
         return result;
     }
 
-    // Pre: n >= 1
+    // Pre: queue != null && n >= 1
     // Post: R == a[n] && n' == n - 1 && immutable(n')
     public static Object remove(ArrayQueueADT queue) {
         if (queue.size == 0) {
             throw new IndexOutOfBoundsException();
         }
-        int last = queue.start + queue.size - 1;
-        if (last >= queue.arr.length) {
-            last -= queue.arr.length;
-        }
-        Object result = queue.arr[last];
+        final int last = last(queue);
+        final Object result = queue.arr[last];
         queue.arr[last] = null;
         queue.size--;
         return result;
     }
 
-    // Pre: true
+    // Pre: queue != null
     // Post: R == n
     public static int size(ArrayQueueADT queue) {
         return queue.size;
     }
 
-    // Pre: true
+    // Pre: queue != null
     // Post: R == (n == 0)
     public static boolean isEmpty(ArrayQueueADT queue) {
         return queue.size == 0;
     }
 
-    // Pre: true
+    // Pre: queue != null
     // Post: n' == 0
     public static void clear(ArrayQueueADT queue) {
         queue.arr = new Object[INITIAL_SIZE];
@@ -116,8 +107,10 @@ public class ArrayQueueADT {
         queue.size = 0;
     }
 
+    // Pre: queue != null
+    // Post: R == {a[1], ..., a[n]} && n' == n && immutable(n)
     public static Object[] toArray(ArrayQueueADT queue) {
-        Object[] result = new Object[queue.size];
+        final Object[] result = new Object[queue.size];
         int index = queue.start;
         for (int i = 0; i < queue.size; i++) {
             result[i] = queue.arr[index];
@@ -129,13 +122,21 @@ public class ArrayQueueADT {
         return result;
     }
 
+    private static int last(ArrayQueueADT queue) {
+        int last = queue.start + queue.size - 1;
+        if (last >= queue.arr.length) {
+            last -= queue.arr.length;
+        }
+        return last;
+    }
+
     private static void ensureCapacity(ArrayQueueADT queue, int capacity) {
         if (capacity < queue.arr.length) {
             return;
         }
         int ind = queue.start;
-        int oldSize = queue.size;
-        Object[] old = queue.arr;
+        final int oldSize = queue.size;
+        final Object[] old = queue.arr;
         queue.arr = new Object[Math.max(capacity, old.length * 2)];
         queue.start = 0;
         queue.size = 0;

@@ -18,12 +18,8 @@ public class ArrayQueueModule {
     public static void enqueue(Object obj) {
         Objects.requireNonNull(obj);
         ensureCapacity(size + 1);
-        int index = start + size;
-        if (index >= arr.length) {
-            index -= arr.length;
-        }
-        arr[index] = obj;
         size++;
+        arr[last()] = obj;
     }
 
     // Pre: obj != null
@@ -31,12 +27,13 @@ public class ArrayQueueModule {
     public static void push(Object obj) {
         Objects.requireNonNull(obj);
         ensureCapacity(size + 1);
-        start--;
-        if (start < 0) {
-            start += arr.length;
+        if (start == 0) {
+            start = arr.length - 1;
+        } else {
+            start--;
         }
-        arr[start] = obj;
         size++;
+        arr[start] = obj;
     }
 
     // Pre: n >= 1
@@ -54,22 +51,19 @@ public class ArrayQueueModule {
         if (size == 0) {
             throw new IndexOutOfBoundsException();
         }
-        int last = start + size - 1;
-        if (last >= arr.length) {
-            last -= arr.length;
-        }
-        return arr[last];
+        return arr[last()];
     }
 
     // Pre: n >= 1
     // Post: R == a[1] && n' == n - 1 && forall i = 1...n': a'[i] == a[i + 1]
     public static Object dequeue() {
-        Object result = element();
+        final Object result = element();
         arr[start] = null;
         size--;
-        start++;
-        if (start == arr.length) {
+        if (start == arr.length - 1) {
             start = 0;
+        } else {
+            start++;
         }
         return result;
     }
@@ -80,11 +74,8 @@ public class ArrayQueueModule {
         if (size == 0) {
             throw new IndexOutOfBoundsException();
         }
-        int last = start + size - 1;
-        if (last >= arr.length) {
-            last -= arr.length;
-        }
-        Object result = arr[last];
+        final int last = last();
+        final Object result = arr[last];
         arr[last] = null;
         size--;
         return result;
@@ -110,8 +101,10 @@ public class ArrayQueueModule {
         size = 0;
     }
 
+    // Pre: true
+    // Post: R == {a[1], ..., a[n]} && n' == n && immutable(n)
     public static Object[] toArray() {
-        Object[] result = new Object[size];
+        final Object[] result = new Object[size];
         int index = start;
         for (int i = 0; i < size; i++) {
             result[i] = arr[index];
@@ -123,13 +116,21 @@ public class ArrayQueueModule {
         return result;
     }
 
+    private static int last() {
+        int last = start + size - 1;
+        if (last >= arr.length) {
+            last -= arr.length;
+        }
+        return last;
+    }
+
     private static void ensureCapacity(int capacity) {
         if (capacity < arr.length) {
             return;
         }
         int ind = start;
-        int oldSize = size;
-        Object[] old = arr;
+        final int oldSize = size;
+        final Object[] old = arr;
         arr = new Object[Math.max(capacity, old.length * 2)];
         start = 0;
         size = 0;
