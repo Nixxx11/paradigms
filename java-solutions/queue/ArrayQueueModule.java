@@ -104,16 +104,7 @@ public class ArrayQueueModule {
     // Pre: true
     // Post: R == {a[1], ..., a[n]} && n' == n && immutable(n)
     public static Object[] toArray() {
-        final Object[] result = new Object[size];
-        int index = start;
-        for (int i = 0; i < size; i++) {
-            result[i] = arr[index];
-            index++;
-            if (index == arr.length) {
-                index = 0;
-            }
-        }
-        return result;
+        return toArray(size);
     }
 
     private static int last() {
@@ -124,22 +115,22 @@ public class ArrayQueueModule {
         return last;
     }
 
-    private static void ensureCapacity(int capacity) {
-        if (capacity < arr.length) {
-            return;
+    private static Object[] toArray(int newSize) {
+        final Object[] result = new Object[newSize];
+        if (start + size <= arr.length) {
+            System.arraycopy(arr, start, result, 0, size);
+        } else {
+            int firstHalfSize = arr.length - start;
+            System.arraycopy(arr, start, result, 0, firstHalfSize);
+            System.arraycopy(arr, 0, result, firstHalfSize, size - firstHalfSize);
         }
-        int ind = start;
-        final int oldSize = size;
-        final Object[] old = arr;
-        arr = new Object[Math.max(capacity, old.length * 2)];
-        start = 0;
-        size = 0;
-        for (int i = 0; i < oldSize; i++) {
-            enqueue(old[ind]);
-            ind++;
-            if (ind == old.length) {
-                ind = 0;
-            }
+        return result;
+    }
+
+    private static void ensureCapacity(int capacity) {
+        if (capacity > arr.length) {
+            arr = toArray(Math.max(capacity, arr.length * 2));
+            start = 0;
         }
     }
 }

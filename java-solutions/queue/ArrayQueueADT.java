@@ -110,16 +110,7 @@ public class ArrayQueueADT {
     // Pre: queue != null
     // Post: R == {a[1], ..., a[n]} && n' == n && immutable(n)
     public static Object[] toArray(ArrayQueueADT queue) {
-        final Object[] result = new Object[queue.size];
-        int index = queue.start;
-        for (int i = 0; i < queue.size; i++) {
-            result[i] = queue.arr[index];
-            index++;
-            if (index == queue.arr.length) {
-                index = 0;
-            }
-        }
-        return result;
+        return toArray(queue, queue.size);
     }
 
     private static int last(ArrayQueueADT queue) {
@@ -130,22 +121,22 @@ public class ArrayQueueADT {
         return last;
     }
 
-    private static void ensureCapacity(ArrayQueueADT queue, int capacity) {
-        if (capacity < queue.arr.length) {
-            return;
+    private static Object[] toArray(ArrayQueueADT queue, int newSize) {
+        final Object[] result = new Object[newSize];
+        if (queue.start + queue.size <= queue.arr.length) {
+            System.arraycopy(queue.arr, queue.start, result, 0, queue.size);
+        } else {
+            int firstHalfSize = queue.arr.length - queue.start;
+            System.arraycopy(queue.arr, queue.start, result, 0, firstHalfSize);
+            System.arraycopy(queue.arr, 0, result, firstHalfSize, queue.size - firstHalfSize);
         }
-        int ind = queue.start;
-        final int oldSize = queue.size;
-        final Object[] old = queue.arr;
-        queue.arr = new Object[Math.max(capacity, old.length * 2)];
-        queue.start = 0;
-        queue.size = 0;
-        for (int i = 0; i < oldSize; i++) {
-            enqueue(queue, old[ind]);
-            ind++;
-            if (ind == old.length) {
-                ind = 0;
-            }
+        return result;
+    }
+
+    private static void ensureCapacity(ArrayQueueADT queue, int capacity) {
+        if (capacity > queue.arr.length) {
+            queue.arr = toArray(queue, Math.max(capacity, queue.arr.length * 2));
+            queue.start = 0;
         }
     }
 }
