@@ -6,6 +6,7 @@ public class ArrayQueue extends AbstractQueue {
     private static final int INITIAL_SIZE = 5;
     private Object[] arr = new Object[INITIAL_SIZE];
     private int start = 0;
+    private int iterationIndex;
 
     // Model: a[1], ..., a[n]
 
@@ -49,22 +50,14 @@ public class ArrayQueue extends AbstractQueue {
     @Override
     protected void removeFirst() {
         arr[start] = null;
-        if (start == arr.length - 1) {
-            start = 0;
-        } else {
-            start++;
-        }
+        incrementStart();
     }
 
     // Pre: n >= 1
     // Post: R == a[n] && n' == n - 1 && immutable(n')
     public Object remove() {
-        if (size == 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        final int last = last();
-        final Object result = arr[last];
-        arr[last] = null;
+        final Object result = peek();
+        arr[last()] = null;
         size--;
         return result;
     }
@@ -73,6 +66,38 @@ public class ArrayQueue extends AbstractQueue {
     protected void removeAll() {
         arr = new Object[INITIAL_SIZE];
         start = 0;
+    }
+
+    @Override
+    protected void startIteration() {
+        iterationIndex = start;
+    }
+
+    @Override
+    protected void iterateNext() {
+        if (iterationIndex == arr.length - 1) {
+            iterationIndex = 0;
+        } else {
+            iterationIndex++;
+        }
+    }
+
+    @Override
+    protected Object iterateCurrent() {
+        return arr[iterationIndex];
+    }
+
+    @Override
+    protected void removeCurrent() {
+        if (iterationIndex >= start) {
+            System.arraycopy(arr, start, arr, start + 1, iterationIndex - start);
+            arr[start] = null;
+            incrementStart();
+        } else {
+            int last = last();
+            System.arraycopy(arr, iterationIndex + 1, arr, iterationIndex, last - iterationIndex);
+            arr[last] = null;
+        }
     }
 
     // Pre: true
@@ -87,6 +112,14 @@ public class ArrayQueue extends AbstractQueue {
             last -= arr.length;
         }
         return last;
+    }
+
+    private void incrementStart() {
+        if (start == arr.length - 1) {
+            start = 0;
+        } else {
+            start++;
+        }
     }
 
     private Object[] toArray(int newSize) {

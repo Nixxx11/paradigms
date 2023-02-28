@@ -13,6 +13,14 @@ public abstract class AbstractQueue implements Queue {
 
     protected abstract void removeAll();
 
+    protected abstract void startIteration();
+
+    protected abstract void iterateNext();
+
+    protected abstract Object iterateCurrent();
+
+    protected abstract void removeCurrent();
+
     @Override
     public void enqueue(final Object obj) {
         Objects.requireNonNull(obj);
@@ -50,5 +58,28 @@ public abstract class AbstractQueue implements Queue {
     public void clear() {
         removeAll();
         size = 0;
+    }
+
+    @Override
+    public boolean contains(Object obj) {
+        startIteration();
+        for (int i = 0; i < size; i++) {
+            if (iterateCurrent().equals(obj)) {
+                return true;
+            }
+            iterateNext();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean removeFirstOccurrence(Object obj) {
+        if (contains(obj)) {
+            removeCurrent();
+            size--;
+            return true;
+        } else {
+            return false;
+        }
     }
 }
