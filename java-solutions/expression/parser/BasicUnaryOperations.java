@@ -35,5 +35,6 @@ public enum BasicUnaryOperations implements UnaryOperations {
         }
     };
 
+    @Override
     public abstract Operand create(final Operand inner);
 }

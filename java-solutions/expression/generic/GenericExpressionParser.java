@@ -1,0 +1,150 @@
+package expression.generic;
+
+import expression.parser.BaseParser;
+import expression.parser.CharSource;
+import expression.parser.ParsingException;
+
+import java.util.Map;
+
+public class GenericExpressionParser extends BaseParser {
+    protected final Map<String, GenericBinaryOperations> binaryOperations;
+    protected final Map<String, GenericUnaryOperations> unaryOperations;
+    protected GenericBinaryOperations savedOp = null;
+    protected String savedToken = null;
+
+    public GenericExpressionParser(
+            final CharSource source,
+            final Map<String, GenericBinaryOperations> binaryOperations,
+            final Map<String, GenericUnaryOperations> unaryOperations
+    ) {
+        super(source);
+        this.binaryOperations = binaryOperations;
+        this.unaryOperations = unaryOperations;
+    }
+
+    public GenericOperand parseExpression() throws ParsingException {
+        final GenericOperand result = parse();
+        if (!eof() || savedToken != null) {
+            throw error(String.valueOf(CharSource.EOF), getToken());
+        }
+        return result;
+    }
+
+    protected GenericOperand parse() throws ParsingException {
+        GenericOperand left = getOperand();
+        while (hasNextOperation()) {
+            left = finishOperation(left, getBinaryOperation());
+        }
+        return left;
+    }
+
+    protected GenericOperand finishOperation(
+            final GenericOperand left, final GenericBinaryOperations op
+    ) throws ParsingException {
+        GenericOperand right = getOperand();
+        while (hasNextOperation()) {
+            final GenericBinaryOperations nextOp = getBinaryOperation();
+            if (nextOp.getOrder() >= op.getOrder()) {
+                savedOp = nextOp;
+                break;
+            }
+            right = finishOperation(right, nextOp);
+        }
+        return op.create(left, right);
+    }
+
+    protected GenericOperand getOperand() throws ParsingException {
+        skipWhitespace();
+        final String token;
+        if (test('-') || Character.isDigit(peek())) {
+            final StringBuilder sb = new StringBuilder();
+            if (take('-')) {
+                sb.append('-');
+            }
+            if (Character.isDigit(peek())) {
+                while (Character.isDigit(peek())) {
+                    sb.append(take());
+                }
+                try {
+                    return new GenericConst(Integer.parseInt(sb.toString()));
+                } catch (NumberFormatException e) {
+                    throw error("Invalid number format: " + sb);
+                }
+            } else {
+                token = sb.toString();
+            }
+        } else {
+            token = getToken();
+        }
+        if (unaryOperations.containsKey(token)) {
+            return unaryOperations.get(token).create(getOperand());
+        }
+        return switch (token) {
+            case "x", "y", "z" -> new GenericVariable(token);
+            case "(" -> {
+                final GenericOperand result = parse();
+                final String nextToken = getToken();
+                if (!")".equals(nextToken)) {
+                    throw error(")", nextToken);
+                }
+                yield result;
+            }
+            default -> throw error("an operand", token);
+        };
+    }
+
+    protected GenericBinaryOperations getBinaryOperation() throws ParsingException {
+        if (savedOp != null) {
+            final GenericBinaryOperations result = savedOp;
+            savedOp = null;
+            return result;
+        }
+        skipWhitespace();
+        final String operation = getToken();
+        if (!binaryOperations.containsKey(operation)) {
+            throw error("an operation", operation);
+        }
+        return binaryOperations.get(operation);
+    }
+
+    protected String getToken() {
+        if (savedToken != null) {
+            String result = savedToken;
+            savedToken = null;
+            return result;
+        }
+        if (Character.isJavaIdentifierStart(peek())) {
+            final StringBuilder identifier = new StringBuilder();
+            identifier.append(take());
+            while (!eof() && Character.isJavaIdentifierPart(peek())) {
+                identifier.append(take());
+            }
+            return identifier.toString();
+        } else if (Character.getType(peek()) == Character.MATH_SYMBOL) {
+            final StringBuilder identifier = new StringBuilder();
+            while (!eof() && Character.getType(peek()) == Character.MATH_SYMBOL) {
+                identifier.append(take());
+            }
+            return identifier.toString();
+        }
+        return String.valueOf(take());
+    }
+
+    protected boolean hasNextOperation() {
+        skipWhitespace();
+        if (savedOp != null) {
+            return true;
+        }
+        if (eof()) {
+            return false;
+        }
+        String token = getToken();
+        if (binaryOperations.containsKey(token)) {
+            savedOp = binaryOperations.get(token);
+            return true;
+        } else {
+            savedToken = token;
+            return false;
+        }
+    }
+}
