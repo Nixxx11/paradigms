@@ -23,22 +23,39 @@ public class GenericTabulator implements Tabulator {
             final int y1, final int y2,
             final int z1, final int z2
     ) throws ParsingException {
-        GenericExpressionParser parser = new GenericExpressionParser(
-                new StringSource(expression),
-                BINARY_OPERATIONS,
-                UNARY_OPERATIONS
-        );
-        final GenericExpression expr = parser.parseExpression();
-        final Arithmetic<? extends Number> a = switch (mode) {
-            case "i" -> new CheckedIntArithmetic();
-            case "d" -> new DoubleArithmetic();
-            case "bi" -> new BigIntegerArithmetic();
+        final NumberParser<?> np;
+        final Arithmetic<?> a;
+        switch (mode) {
+            case "i" -> {
+                np = new IntegerParser();
+                a = new CheckedIntArithmetic();
+            }
+            case "d" -> {
+                np = new DoubleParser();
+                a = new DoubleArithmetic();
+            }
+            case "bi" -> {
+                np = new BigIntegerParser();
+                a = new BigIntegerArithmetic();
+            }
             default -> throw new IllegalArgumentException("Unknown mode: " + mode);
-        };
-        return tabulate(a, expr, x1, x2, y1, y2, z1, z2);
+        }
+        return evaluate(a, parse(expression, np), x1, x2, y1, y2, z1, z2);
     }
 
-    private <T extends Number> Object[][][] tabulate(
+    private <T extends Number> GenericExpression parse(
+            final String expression, final NumberParser<T> np
+    ) throws ParsingException {
+        final GenericExpressionParser parser = new GenericExpressionParser(
+                new StringSource(expression),
+                BINARY_OPERATIONS,
+                UNARY_OPERATIONS,
+                np
+        );
+        return parser.parseExpression();
+    }
+
+    private <T extends Number> Object[][][] evaluate(
             final Arithmetic<T> a, final GenericExpression expression,
             final int x1, final int x2,
             final int y1, final int y2,

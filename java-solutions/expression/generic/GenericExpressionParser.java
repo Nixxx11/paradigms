@@ -9,17 +9,20 @@ import java.util.Map;
 public class GenericExpressionParser extends BaseParser {
     protected final Map<String, GenericBinaryOperations> binaryOperations;
     protected final Map<String, GenericUnaryOperations> unaryOperations;
+    protected final NumberParser<?> numberParser;
     protected GenericBinaryOperations savedOp = null;
     protected String savedToken = null;
 
     public GenericExpressionParser(
             final CharSource source,
             final Map<String, GenericBinaryOperations> binaryOperations,
-            final Map<String, GenericUnaryOperations> unaryOperations
+            final Map<String, GenericUnaryOperations> unaryOperations,
+            final NumberParser<?> numberParser
     ) {
         super(source);
         this.binaryOperations = binaryOperations;
         this.unaryOperations = unaryOperations;
+        this.numberParser = numberParser;
     }
 
     public GenericExpression parseExpression() throws ParsingException {
@@ -66,7 +69,7 @@ public class GenericExpressionParser extends BaseParser {
                     sb.append(take());
                 }
                 try {
-                    return new GenericConst(Integer.parseInt(sb.toString()));
+                    return new GenericConst(numberParser.parse(sb.toString()));
                 } catch (NumberFormatException e) {
                     throw error("Invalid number format: " + sb);
                 }
