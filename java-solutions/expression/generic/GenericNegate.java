@@ -11,7 +11,7 @@ public class GenericNegate extends GenericUnaryOperation {
     }
 
     @Override
-    protected <T extends NumberType<T>> T calculate(final T value) {
-        return value.negate();
+    protected <T extends Number> T calculate(final T n, final Arithmetic<T> a) {
+        return a.negate(n);
     }
 }

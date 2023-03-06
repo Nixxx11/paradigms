@@ -11,7 +11,7 @@ public abstract class GenericBinaryOperation implements GenericExpression {
         this.rightOperand = rightOperand;
     }
 
-    protected abstract <T extends NumberType<T>> T calculate(T n1, T n2);
+    protected abstract <T extends Number> T calculate(T n1, T n2, Arithmetic<T> a);
 
     protected abstract String getSymbol();
 
@@ -24,8 +24,8 @@ public abstract class GenericBinaryOperation implements GenericExpression {
     }
 
     @Override
-    public <T extends NumberType<T>> T evaluate(final T x, final T y, final T z) {
-        return calculate(leftOperand.evaluate(x, y, z), rightOperand.evaluate(x, y, z));
+    public <T extends Number> T evaluate(final T x, final T y, final T z, final Arithmetic<T> a) {
+        return calculate(leftOperand.evaluate(x, y, z, a), rightOperand.evaluate(x, y, z, a), a);
     }
 
     @Override

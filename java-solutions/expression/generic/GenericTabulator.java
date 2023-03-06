@@ -28,60 +28,38 @@ public class GenericTabulator implements Tabulator {
                 BINARY_OPERATIONS,
                 UNARY_OPERATIONS
         );
-        GenericExpression expr = parser.parseExpression();
+        final GenericExpression expr = parser.parseExpression();
+        final Arithmetic<? extends Number> a = switch (mode) {
+            case "i" -> new CheckedIntArithmetic();
+            case "d" -> new DoubleArithmetic();
+            case "bi" -> new BigIntegerArithmetic();
+            default -> throw new IllegalArgumentException("Unknown mode: " + mode);
+        };
+        return tabulate(a, expr, x1, x2, y1, y2, z1, z2);
+    }
+
+    private <T extends Number> Object[][][] tabulate(
+            final Arithmetic<T> a, final GenericExpression expression,
+            final int x1, final int x2,
+            final int y1, final int y2,
+            final int z1, final int z2
+    ) {
         final int dx = x2 - x1 + 1;
         final int dy = y2 - y1 + 1;
         final int dz = z2 - z1 + 1;
         Object[][][] result = new Object[dx][dy][dz];
-        switch (mode) {
-            case "i" -> {
-                for (int i = 0; i < dx; i++) {
-                    for (int j = 0; j < dy; j++) {
-                        for (int k = 0; k < dz; k++) {
-                            try {
-                                result[i][j][k] = expr.evaluate(
-                                        new CheckedIntType(x1 + i),
-                                        new CheckedIntType(y1 + j),
-                                        new CheckedIntType(z1 + k)
-                                ).value();
-                            } catch (ArithmeticException e) {
-                                result[i][j][k] = null;
-                            }
-                        }
-                    }
-                }
-            }
-            case "d" -> {
-                for (int i = 0; i < dx; i++) {
-                    for (int j = 0; j < dy; j++) {
-                        for (int k = 0; k < dz; k++) {
-                            try {
-                                result[i][j][k] = expr.evaluate(
-                                        new DoubleType(x1 + i),
-                                        new DoubleType(y1 + j),
-                                        new DoubleType(z1 + k)
-                                ).value();
-                            } catch (ArithmeticException e) {
-                                result[i][j][k] = null;
-                            }
-                        }
-                    }
-                }
-            }
-            case "bi" -> {
-                for (int i = 0; i < dx; i++) {
-                    for (int j = 0; j < dy; j++) {
-                        for (int k = 0; k < dz; k++) {
-                            try {
-                                result[i][j][k] = expr.evaluate(
-                                        new BigIntegerType(x1 + i),
-                                        new BigIntegerType(y1 + j),
-                                        new BigIntegerType(z1 + k)
-                                ).value();
-                            } catch (ArithmeticException e) {
-                                result[i][j][k] = null;
-                            }
-                        }
+        for (int i = 0; i < dx; i++) {
+            for (int j = 0; j < dy; j++) {
+                for (int k = 0; k < dz; k++) {
+                    try {
+                        result[i][j][k] = expression.evaluate(
+                                a.valueOf(x1 + i),
+                                a.valueOf(y1 + j),
+                                a.valueOf(z1 + k),
+                                a
+                        );
+                    } catch (ArithmeticException e) {
+                        result[i][j][k] = null;
                     }
                 }
             }

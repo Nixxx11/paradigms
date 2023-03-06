@@ -15,8 +15,8 @@ public class GenericConst implements GenericExpression {
     }
 
     @Override
-    public <T extends NumberType<T>> T evaluate(final T x, final T y, final T z) {
-        return x.valueOf(value);
+    public <T extends Number> T evaluate(final T x, final T y, final T z, final Arithmetic<T> a) {
+        return a.valueOf(value);
     }
 
     @Override

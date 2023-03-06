@@ -11,7 +11,7 @@ public abstract class GenericUnaryOperation implements GenericExpression {
         this.innerOperand = expr;
     }
 
-    protected abstract <T extends NumberType<T>> T calculate(T value);
+    protected abstract <T extends Number> T calculate(T n, Arithmetic<T> a);
 
     protected abstract String getSymbol();
 
@@ -25,8 +25,8 @@ public abstract class GenericUnaryOperation implements GenericExpression {
     }
 
     @Override
-    public <T extends NumberType<T>> T evaluate(final T x, final T y, final T z) {
-        return calculate(innerOperand.evaluate(x, y, z));
+    public <T extends Number> T evaluate(final T x, final T y, final T z, final Arithmetic<T> a) {
+        return calculate(innerOperand.evaluate(x, y, z, a), a);
     }
 
     @Override

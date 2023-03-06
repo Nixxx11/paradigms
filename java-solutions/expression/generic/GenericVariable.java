@@ -17,7 +17,7 @@ public class GenericVariable implements GenericExpression {
     }
 
     @Override
-    public <T extends NumberType<T>> T evaluate(final T x, final T y, final T z) {
+    public <T extends Number> T evaluate(final T x, final T y, final T z, final Arithmetic<T> a) {
         return switch (name) {
             case "x" -> x;
             case "y" -> y;

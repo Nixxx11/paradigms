@@ -21,8 +21,8 @@ public class GenericDivide extends GenericBinaryOperation {
 
 
     @Override
-    protected <T extends NumberType<T>> T calculate(final T n1, final T n2) {
-        return n1.divide(n2);
+    protected <T extends Number> T calculate(final T n1, final T n2, final Arithmetic<T> a) {
+        return a.divide(n1, n2);
     }
 
     @Override
