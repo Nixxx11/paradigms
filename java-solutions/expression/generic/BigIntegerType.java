@@ -14,22 +14,22 @@ public class BigIntegerType implements NumberType<BigIntegerType> {
     }
 
     @Override
-    public BigIntegerType add(BigIntegerType x) {
+    public BigIntegerType add(final BigIntegerType x) {
         return new BigIntegerType(number.add(x.number));
     }
 
     @Override
-    public BigIntegerType subtract(BigIntegerType x) {
+    public BigIntegerType subtract(final BigIntegerType x) {
         return new BigIntegerType(number.subtract(x.number));
     }
 
     @Override
-    public BigIntegerType multiply(BigIntegerType x) {
+    public BigIntegerType multiply(final BigIntegerType x) {
         return new BigIntegerType(number.multiply(x.number));
     }
 
     @Override
-    public BigIntegerType divide(BigIntegerType x) {
+    public BigIntegerType divide(final BigIntegerType x) {
         return new BigIntegerType(number.divide(x.number));
     }
 
@@ -39,7 +39,7 @@ public class BigIntegerType implements NumberType<BigIntegerType> {
     }
 
     @Override
-    public BigIntegerType valueOf(Number n) {
+    public BigIntegerType valueOf(final Number n) {
         return new BigIntegerType(BigInteger.valueOf(n.longValue()));
     }
 

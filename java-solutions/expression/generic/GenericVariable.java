@@ -4,7 +4,7 @@ import expression.Order;
 
 import java.util.Objects;
 
-public class GenericVariable implements GenericOperand {
+public class GenericVariable implements GenericExpression {
     private final String name;
 
     public GenericVariable(final String name) {

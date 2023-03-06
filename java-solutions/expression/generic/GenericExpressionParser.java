@@ -22,26 +22,26 @@ public class GenericExpressionParser extends BaseParser {
         this.unaryOperations = unaryOperations;
     }
 
-    public GenericOperand parseExpression() throws ParsingException {
-        final GenericOperand result = parse();
+    public GenericExpression parseExpression() throws ParsingException {
+        final GenericExpression result = parse();
         if (!eof() || savedToken != null) {
             throw error(String.valueOf(CharSource.EOF), getToken());
         }
         return result;
     }
 
-    protected GenericOperand parse() throws ParsingException {
-        GenericOperand left = getOperand();
+    protected GenericExpression parse() throws ParsingException {
+        GenericExpression left = getOperand();
         while (hasNextOperation()) {
             left = finishOperation(left, getBinaryOperation());
         }
         return left;
     }
 
-    protected GenericOperand finishOperation(
-            final GenericOperand left, final GenericBinaryOperations op
+    protected GenericExpression finishOperation(
+            final GenericExpression left, final GenericBinaryOperations op
     ) throws ParsingException {
-        GenericOperand right = getOperand();
+        GenericExpression right = getOperand();
         while (hasNextOperation()) {
             final GenericBinaryOperations nextOp = getBinaryOperation();
             if (nextOp.getOrder() >= op.getOrder()) {
@@ -53,7 +53,7 @@ public class GenericExpressionParser extends BaseParser {
         return op.create(left, right);
     }
 
-    protected GenericOperand getOperand() throws ParsingException {
+    protected GenericExpression getOperand() throws ParsingException {
         skipWhitespace();
         final String token;
         if (test('-') || Character.isDigit(peek())) {
@@ -82,7 +82,7 @@ public class GenericExpressionParser extends BaseParser {
         return switch (token) {
             case "x", "y", "z" -> new GenericVariable(token);
             case "(" -> {
-                final GenericOperand result = parse();
+                final GenericExpression result = parse();
                 final String nextToken = getToken();
                 if (!")".equals(nextToken)) {
                     throw error(")", nextToken);

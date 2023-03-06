@@ -4,10 +4,10 @@ import expression.Order;
 
 import java.util.Objects;
 
-public abstract class GenericUnaryOperation implements GenericOperand {
-    protected final GenericOperand innerOperand;
+public abstract class GenericUnaryOperation implements GenericExpression {
+    protected final GenericExpression innerOperand;
 
-    protected GenericUnaryOperation(final GenericOperand expr) {
+    protected GenericUnaryOperation(final GenericExpression expr) {
         this.innerOperand = expr;
     }
 

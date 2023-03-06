@@ -28,7 +28,7 @@ public class GenericTabulator implements Tabulator {
                 BINARY_OPERATIONS,
                 UNARY_OPERATIONS
         );
-        GenericOperand expr = parser.parseExpression();
+        GenericExpression expr = parser.parseExpression();
         final int dx = x2 - x1 + 1;
         final int dy = y2 - y1 + 1;
         final int dz = z2 - z1 + 1;

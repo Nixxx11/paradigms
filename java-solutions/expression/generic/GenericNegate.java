@@ -1,7 +1,7 @@
 package expression.generic;
 
 public class GenericNegate extends GenericUnaryOperation {
-    public GenericNegate(final GenericOperand expr) {
+    public GenericNegate(final GenericExpression expr) {
         super(expr);
     }
 

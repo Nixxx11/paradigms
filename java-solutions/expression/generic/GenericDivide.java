@@ -3,7 +3,7 @@ package expression.generic;
 import expression.Order;
 
 public class GenericDivide extends GenericBinaryOperation {
-    public GenericDivide(final GenericOperand expr1, final GenericOperand expr2) {
+    public GenericDivide(final GenericExpression expr1, final GenericExpression expr2) {
         super(expr1, expr2);
     }
 

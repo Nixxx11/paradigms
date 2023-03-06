@@ -2,10 +2,10 @@ package expression.generic;
 
 import expression.Order;
 
-public class GenericConst implements GenericOperand {
+public class GenericConst implements GenericExpression {
     private final Number value;
 
-    public GenericConst(final int value) {
+    public GenericConst(final Number value) {
         this.value = value;
     }
 
@@ -16,7 +16,7 @@ public class GenericConst implements GenericOperand {
 
     @Override
     public <T extends NumberType<T>> T evaluate(final T x, final T y, final T z) {
-        return x.valueOf(value.intValue());
+        return x.valueOf(value);
     }
 
     @Override

@@ -2,11 +2,11 @@ package expression.generic;
 
 import java.util.Objects;
 
-public abstract class GenericBinaryOperation implements GenericOperand {
-    protected final GenericOperand leftOperand;
-    protected final GenericOperand rightOperand;
+public abstract class GenericBinaryOperation implements GenericExpression {
+    protected final GenericExpression leftOperand;
+    protected final GenericExpression rightOperand;
 
-    protected GenericBinaryOperation(final GenericOperand leftOperand, final GenericOperand rightOperand) {
+    protected GenericBinaryOperation(final GenericExpression leftOperand, final GenericExpression rightOperand) {
         this.leftOperand = leftOperand;
         this.rightOperand = rightOperand;
     }

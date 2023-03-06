@@ -3,11 +3,11 @@ package expression.generic;
 public enum BasicGenericUnaryOperations implements GenericUnaryOperations {
     NEGATE {
         @Override
-        public GenericOperand create(final GenericOperand inner) {
+        public GenericExpression create(final GenericExpression inner) {
             return new GenericNegate(inner);
         }
     };
 
     @Override
-    public abstract GenericOperand create(final GenericOperand inner);
+    public abstract GenericExpression create(final GenericExpression inner);
 }
