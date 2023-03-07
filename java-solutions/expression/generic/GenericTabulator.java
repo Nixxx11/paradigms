@@ -28,13 +28,14 @@ public class GenericTabulator implements Tabulator {
     ) throws ParsingException {
         final NumberParser<?> np;
         final Arithmetic<?> a;
+        // :NOTE: Map
         switch (mode) {
             case "i" -> {
                 np = new IntegerParser();
                 a = new CheckedIntArithmetic();
             }
             case "d" -> {
-                np = new DoubleParser();
+                np = Double::parseDouble;
                 a = new DoubleArithmetic();
             }
             case "bi" -> {
@@ -55,6 +56,7 @@ public class GenericTabulator implements Tabulator {
             }
             default -> throw new IllegalArgumentException("Unknown mode: " + mode);
         }
+        // :NOTE: type expressions
         return evaluate(a, parse(expression, np), x1, x2, y1, y2, z1, z2);
     }
 
@@ -91,6 +93,7 @@ public class GenericTabulator implements Tabulator {
                                 a
                         );
                     } catch (ArithmeticException e) {
+                        // :NOTE: = null
                         result[i][j][k] = null;
                     }
                 }
