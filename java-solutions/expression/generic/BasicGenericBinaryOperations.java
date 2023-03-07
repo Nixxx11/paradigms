@@ -24,6 +24,12 @@ public enum BasicGenericBinaryOperations implements GenericBinaryOperations {
         public GenericExpression create(final GenericExpression left, final GenericExpression right) {
             return new GenericDivide(left, right);
         }
+    },
+    MOD(Mod.ORDER) {
+        @Override
+        public GenericExpression create(final GenericExpression left, final GenericExpression right) {
+            return new Mod(left, right);
+        }
     };
     private final int order;
 

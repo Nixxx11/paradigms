@@ -24,8 +24,18 @@ public class BigIntegerArithmetic implements Arithmetic<BigInteger> {
     }
 
     @Override
+    public BigInteger mod(final BigInteger n1, final BigInteger n2) {
+        return n1.mod(n2);
+    }
+
+    @Override
     public BigInteger negate(final BigInteger n) {
         return n.negate();
+    }
+
+    @Override
+    public boolean isNegative(final BigInteger n) {
+        return n.signum() == -1;
     }
 
     @Override

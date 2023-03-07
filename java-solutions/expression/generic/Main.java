@@ -5,7 +5,7 @@ import expression.parser.ParsingException;
 import java.util.Set;
 
 public class Main {
-    private static final Set<String> modes = Set.of("-i", "-d", "-bi");
+    private static final Set<String> modes = Set.of("-i", "-d", "-bi", "-u", "-l", "-s");
 
     public static void main(String[] args) {
         if (args.length != 2) {

@@ -9,7 +9,19 @@ public interface Arithmetic<T extends Number> {
 
     T divide(T n1, T n2);
 
+    T mod(T n1, T n2);
+
     T negate(T n);
+
+    default T abs(T n) {
+        return isNegative(n) ? negate(n) : n;
+    }
+
+    default T square(T n) {
+        return multiply(n, n);
+    }
+
+    boolean isNegative(T n);
 
     T valueOf(Number n);
 }

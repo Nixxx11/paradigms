@@ -10,10 +10,13 @@ public class GenericTabulator implements Tabulator {
             "+", BasicGenericBinaryOperations.ADD,
             "-", BasicGenericBinaryOperations.SUBTRACT,
             "*", BasicGenericBinaryOperations.MULTIPLY,
-            "/", BasicGenericBinaryOperations.DIVIDE
+            "/", BasicGenericBinaryOperations.DIVIDE,
+            "mod", BasicGenericBinaryOperations.MOD
     );
     private static final Map<String, GenericUnaryOperations> UNARY_OPERATIONS = Map.of(
-            "-", BasicGenericUnaryOperations.NEGATE
+            "-", BasicGenericUnaryOperations.NEGATE,
+            "abs", BasicGenericUnaryOperations.ABS,
+            "square", BasicGenericUnaryOperations.SQUARE
     );
 
     @Override
@@ -37,6 +40,18 @@ public class GenericTabulator implements Tabulator {
             case "bi" -> {
                 np = new BigIntegerParser();
                 a = new BigIntegerArithmetic();
+            }
+            case "u" -> {
+                np = new IntegerParser();
+                a = new IntegerArithmetic();
+            }
+            case "l" -> {
+                np = new LongParser();
+                a = new LongArithmetic();
+            }
+            case "s" -> {
+                np = new ShortParser();
+                a = new ShortArithmetic();
             }
             default -> throw new IllegalArgumentException("Unknown mode: " + mode);
         }

@@ -47,11 +47,21 @@ public class CheckedIntArithmetic implements Arithmetic<Integer> {
     }
 
     @Override
+    public Integer mod(final Integer n1, final Integer n2) {
+        return n1 % n2;
+    }
+
+    @Override
     public Integer negate(final Integer n) {
         if (n == Integer.MIN_VALUE) {
             throw new ArithmeticException("- " + n + " caused an overflow");
         }
         return -n;
+    }
+
+    @Override
+    public boolean isNegative(final Integer n) {
+        return n < 0;
     }
 
     @Override
