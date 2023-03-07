@@ -23,15 +23,6 @@ public abstract class BaseParser {
         return ch == expected;
     }
 
-    protected boolean test(final char[] options) {
-        for (char option : options) {
-            if (test(option)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     protected boolean take(final char expected) {
         if (test(expected)) {
             take();

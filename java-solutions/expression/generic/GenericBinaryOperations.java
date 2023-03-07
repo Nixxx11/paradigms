@@ -2,5 +2,5 @@ package expression.generic;
 
 public interface GenericBinaryOperations {
     int getOrder();
-    GenericExpression create(GenericExpression left, GenericExpression right);
+    <T extends Number> GenericExpression<T> create(GenericExpression<T> left, GenericExpression<T> right);
 }

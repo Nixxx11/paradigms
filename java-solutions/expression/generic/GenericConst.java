@@ -2,10 +2,10 @@ package expression.generic;
 
 import expression.Order;
 
-public class GenericConst implements GenericExpression {
-    private final Number value;
+public class GenericConst<T extends Number> implements GenericExpression<T> {
+    private final T value;
 
-    public GenericConst(final Number value) {
+    public GenericConst(final T value) {
         this.value = value;
     }
 
@@ -15,8 +15,8 @@ public class GenericConst implements GenericExpression {
     }
 
     @Override
-    public <T extends Number> T evaluate(final T x, final T y, final T z, final Arithmetic<T> a) {
-        return a.valueOf(value);
+    public T evaluate(final T x, final T y, final T z, final Arithmetic<T> a) {
+        return value;
     }
 
     @Override
@@ -32,13 +32,13 @@ public class GenericConst implements GenericExpression {
     @Override
     public boolean equals(final Object obj) {
         if (obj != null && obj.getClass() == GenericConst.class) {
-            return value.doubleValue() == ((GenericConst) obj).value.doubleValue();
+            return value.equals(((GenericConst<?>) obj).value.doubleValue());
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return value.intValue() + (int) ((value.doubleValue() - value.intValue()) * Integer.MAX_VALUE);
+        return value.hashCode();
     }
 }

@@ -32,8 +32,8 @@ public class DoubleArithmetic implements Arithmetic<Double> {
     }
 
     @Override
-    public boolean isNegative(final Double n) {
-        return n < 0;
+    public int compare(final Double n1, final Double n2) {
+        return Double.compare(n1, n2);
     }
 
     @Override
@@ -44,5 +44,10 @@ public class DoubleArithmetic implements Arithmetic<Double> {
     @Override
     public Double valueOf(final Number n) {
         return n.doubleValue();
+    }
+
+    @Override
+    public Double parse(final String s) {
+        return Double.parseDouble(s);
     }
 }

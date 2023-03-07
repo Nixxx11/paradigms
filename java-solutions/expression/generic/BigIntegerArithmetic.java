@@ -29,17 +29,27 @@ public class BigIntegerArithmetic implements Arithmetic<BigInteger> {
     }
 
     @Override
+    public int compare(final BigInteger n1, final BigInteger n2) {
+        return n1.compareTo(n2);
+    }
+
+    @Override
     public BigInteger negate(final BigInteger n) {
         return n.negate();
     }
 
     @Override
-    public boolean isNegative(final BigInteger n) {
-        return n.signum() == -1;
+    public BigInteger abs(final BigInteger n) {
+        return n.abs();
     }
 
     @Override
     public BigInteger valueOf(final Number n) {
         return BigInteger.valueOf(n.longValue());
+    }
+
+    @Override
+    public BigInteger parse(final String s) {
+        return new BigInteger(s);
     }
 }

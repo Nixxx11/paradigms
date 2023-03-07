@@ -1,5 +1,5 @@
 package expression.generic;
 
 public interface GenericUnaryOperations {
-    GenericExpression create(GenericExpression inner);
+    <T extends Number> GenericExpression<T> create(GenericExpression<T> inner);
 }

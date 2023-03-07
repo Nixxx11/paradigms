@@ -19,6 +19,15 @@ public class GenericTabulator implements Tabulator {
             "square", BasicGenericUnaryOperations.SQUARE
     );
 
+    private static final Map<String, Arithmetic<?>> MODES = Map.of(
+            "i", new CheckedIntArithmetic(),
+            "d", new DoubleArithmetic(),
+            "bi", new BigIntegerArithmetic(),
+            "u", new IntegerArithmetic(),
+            "l", new LongArithmetic(),
+            "s", new ShortArithmetic()
+    );
+
     @Override
     public Object[][][] tabulate(
             final String mode, final String expression,
@@ -26,58 +35,26 @@ public class GenericTabulator implements Tabulator {
             final int y1, final int y2,
             final int z1, final int z2
     ) throws ParsingException {
-        final NumberParser<?> np;
-        final Arithmetic<?> a;
-        // :NOTE: Map
-        switch (mode) {
-            case "i" -> {
-                np = new IntegerParser();
-                a = new CheckedIntArithmetic();
-            }
-            case "d" -> {
-                np = Double::parseDouble;
-                a = new DoubleArithmetic();
-            }
-            case "bi" -> {
-                np = new BigIntegerParser();
-                a = new BigIntegerArithmetic();
-            }
-            case "u" -> {
-                np = new IntegerParser();
-                a = new IntegerArithmetic();
-            }
-            case "l" -> {
-                np = new LongParser();
-                a = new LongArithmetic();
-            }
-            case "s" -> {
-                np = new ShortParser();
-                a = new ShortArithmetic();
-            }
-            default -> throw new IllegalArgumentException("Unknown mode: " + mode);
+        Arithmetic<?> a = MODES.getOrDefault(mode, null);
+        if (a == null) {
+            throw new IllegalArgumentException("Unknown mode: " + mode);
         }
-        // :NOTE: type expressions
-        return evaluate(a, parse(expression, np), x1, x2, y1, y2, z1, z2);
+        return tabulate(a, expression, x1, x2, y1, y2, z1, z2);
     }
 
-    private <T extends Number> GenericExpression parse(
-            final String expression, final NumberParser<T> np
-    ) throws ParsingException {
-        final GenericExpressionParser parser = new GenericExpressionParser(
-                new StringSource(expression),
-                BINARY_OPERATIONS,
-                UNARY_OPERATIONS,
-                np
-        );
-        return parser.parseExpression();
-    }
-
-    private <T extends Number> Object[][][] evaluate(
-            final Arithmetic<T> a, final GenericExpression expression,
+    private <T extends Number> Object[][][] tabulate(
+            final Arithmetic<T> arithmetic, final String expression,
             final int x1, final int x2,
             final int y1, final int y2,
             final int z1, final int z2
-    ) {
+    ) throws ParsingException {
+        final GenericExpressionParser<T> parser = new GenericExpressionParser<>(
+                new StringSource(expression),
+                BINARY_OPERATIONS,
+                UNARY_OPERATIONS,
+                arithmetic
+        );
+        final GenericExpression<T> expr = parser.parseExpression();
         final int dx = x2 - x1 + 1;
         final int dy = y2 - y1 + 1;
         final int dz = z2 - z1 + 1;
@@ -86,15 +63,13 @@ public class GenericTabulator implements Tabulator {
             for (int j = 0; j < dy; j++) {
                 for (int k = 0; k < dz; k++) {
                     try {
-                        result[i][j][k] = expression.evaluate(
-                                a.valueOf(x1 + i),
-                                a.valueOf(y1 + j),
-                                a.valueOf(z1 + k),
-                                a
+                        result[i][j][k] = expr.evaluate(
+                                arithmetic.valueOf(x1 + i),
+                                arithmetic.valueOf(y1 + j),
+                                arithmetic.valueOf(z1 + k),
+                                arithmetic
                         );
-                    } catch (ArithmeticException e) {
-                        // :NOTE: = null
-                        result[i][j][k] = null;
+                    } catch (ArithmeticException ignored) {
                     }
                 }
             }

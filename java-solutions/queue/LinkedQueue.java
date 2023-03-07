@@ -17,7 +17,7 @@ public class LinkedQueue extends AbstractQueue {
     }
 
     @Override
-    protected void addLast(Object obj) {
+    protected void addLast(final Object obj) {
         final Node n = new Node(obj, null);
         if (size == 1) {
             first = n;

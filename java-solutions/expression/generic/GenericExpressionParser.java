@@ -6,10 +6,10 @@ import expression.parser.ParsingException;
 
 import java.util.Map;
 
-public class GenericExpressionParser extends BaseParser {
+public class GenericExpressionParser<T extends Number> extends BaseParser {
     protected final Map<String, GenericBinaryOperations> binaryOperations;
     protected final Map<String, GenericUnaryOperations> unaryOperations;
-    protected final NumberParser<?> numberParser;
+    protected final NumberParser<T> numberParser;
     protected GenericBinaryOperations savedOp = null;
     protected String savedToken = null;
 
@@ -17,7 +17,7 @@ public class GenericExpressionParser extends BaseParser {
             final CharSource source,
             final Map<String, GenericBinaryOperations> binaryOperations,
             final Map<String, GenericUnaryOperations> unaryOperations,
-            final NumberParser<?> numberParser
+            final NumberParser<T> numberParser
     ) {
         super(source);
         this.binaryOperations = binaryOperations;
@@ -25,26 +25,26 @@ public class GenericExpressionParser extends BaseParser {
         this.numberParser = numberParser;
     }
 
-    public GenericExpression parseExpression() throws ParsingException {
-        final GenericExpression result = parse();
+    public GenericExpression<T> parseExpression() throws ParsingException {
+        final GenericExpression<T> result = parse();
         if (!eof() || savedToken != null) {
             throw error(String.valueOf(CharSource.EOF), getToken());
         }
         return result;
     }
 
-    protected GenericExpression parse() throws ParsingException {
-        GenericExpression left = getOperand();
+    protected GenericExpression<T> parse() throws ParsingException {
+        GenericExpression<T> left = getOperand();
         while (hasNextOperation()) {
             left = finishOperation(left, getBinaryOperation());
         }
         return left;
     }
 
-    protected GenericExpression finishOperation(
-            final GenericExpression left, final GenericBinaryOperations op
+    protected GenericExpression<T> finishOperation(
+            final GenericExpression<T> left, final GenericBinaryOperations op
     ) throws ParsingException {
-        GenericExpression right = getOperand();
+        GenericExpression<T> right = getOperand();
         while (hasNextOperation()) {
             final GenericBinaryOperations nextOp = getBinaryOperation();
             if (nextOp.getOrder() >= op.getOrder()) {
@@ -56,7 +56,7 @@ public class GenericExpressionParser extends BaseParser {
         return op.create(left, right);
     }
 
-    protected GenericExpression getOperand() throws ParsingException {
+    protected GenericExpression<T> getOperand() throws ParsingException {
         skipWhitespace();
         final String token;
         if (test('-') || Character.isDigit(peek())) {
@@ -69,7 +69,7 @@ public class GenericExpressionParser extends BaseParser {
                     sb.append(take());
                 }
                 try {
-                    return new GenericConst(numberParser.parse(sb.toString()));
+                    return new GenericConst<>(numberParser.parse(sb.toString()));
                 } catch (NumberFormatException e) {
                     throw error("Invalid number format: " + sb);
                 }
@@ -83,9 +83,9 @@ public class GenericExpressionParser extends BaseParser {
             return unaryOperations.get(token).create(getOperand());
         }
         return switch (token) {
-            case "x", "y", "z" -> new GenericVariable(token);
+            case "x", "y", "z" -> new GenericVariable<>(token);
             case "(" -> {
-                final GenericExpression result = parse();
+                final GenericExpression<T> result = parse();
                 final String nextToken = getToken();
                 if (!")".equals(nextToken)) {
                     throw error(")", nextToken);

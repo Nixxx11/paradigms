@@ -3,32 +3,32 @@ package expression.generic;
 public enum BasicGenericBinaryOperations implements GenericBinaryOperations {
     ADD(GenericAdd.ORDER) {
         @Override
-        public GenericExpression create(final GenericExpression left, final GenericExpression right) {
-            return new GenericAdd(left, right);
+        public <T extends Number> GenericExpression<T> create(final GenericExpression<T> left, final GenericExpression<T> right) {
+            return new GenericAdd<>(left, right);
         }
     },
     SUBTRACT(GenericSubtract.ORDER) {
         @Override
-        public GenericExpression create(final GenericExpression left, final GenericExpression right) {
-            return new GenericSubtract(left, right);
+        public <T extends Number> GenericExpression<T> create(final GenericExpression<T> left, final GenericExpression<T> right) {
+            return new GenericSubtract<>(left, right);
         }
     },
     MULTIPLY(GenericMultiply.ORDER) {
         @Override
-        public GenericExpression create(final GenericExpression left, final GenericExpression right) {
-            return new GenericMultiply(left, right);
+        public <T extends Number> GenericExpression<T> create(final GenericExpression<T> left, final GenericExpression<T> right) {
+            return new GenericMultiply<>(left, right);
         }
     },
     DIVIDE(GenericDivide.ORDER) {
         @Override
-        public GenericExpression create(final GenericExpression left, final GenericExpression right) {
-            return new GenericDivide(left, right);
+        public <T extends Number> GenericExpression<T> create(final GenericExpression<T> left, final GenericExpression<T> right) {
+            return new GenericDivide<>(left, right);
         }
     },
     MOD(Mod.ORDER) {
         @Override
-        public GenericExpression create(final GenericExpression left, final GenericExpression right) {
-            return new Mod(left, right);
+        public <T extends Number> GenericExpression<T> create(final GenericExpression<T> left, final GenericExpression<T> right) {
+            return new Mod<>(left, right);
         }
     };
     private final int order;
@@ -43,5 +43,5 @@ public enum BasicGenericBinaryOperations implements GenericBinaryOperations {
     }
 
     @Override
-    public abstract GenericExpression create(final GenericExpression left, final GenericExpression right);
+    public abstract <T extends Number> GenericExpression<T> create(final GenericExpression<T> left, final GenericExpression<T> right);
 }

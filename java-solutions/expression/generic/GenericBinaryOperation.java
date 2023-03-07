@@ -2,16 +2,16 @@ package expression.generic;
 
 import java.util.Objects;
 
-public abstract class GenericBinaryOperation implements GenericExpression {
-    protected final GenericExpression leftOperand;
-    protected final GenericExpression rightOperand;
+public abstract class GenericBinaryOperation<T extends Number> implements GenericExpression<T> {
+    protected final GenericExpression<T> leftOperand;
+    protected final GenericExpression<T> rightOperand;
 
-    protected GenericBinaryOperation(final GenericExpression leftOperand, final GenericExpression rightOperand) {
+    protected GenericBinaryOperation(final GenericExpression<T> leftOperand, final GenericExpression<T> rightOperand) {
         this.leftOperand = leftOperand;
         this.rightOperand = rightOperand;
     }
 
-    protected abstract <T extends Number> T calculate(T n1, T n2, Arithmetic<T> a);
+    protected abstract T calculate(T n1, T n2, Arithmetic<T> a);
 
     protected abstract String getSymbol();
 
@@ -24,7 +24,7 @@ public abstract class GenericBinaryOperation implements GenericExpression {
     }
 
     @Override
-    public <T extends Number> T evaluate(final T x, final T y, final T z, final Arithmetic<T> a) {
+    public T evaluate(final T x, final T y, final T z, final Arithmetic<T> a) {
         return calculate(leftOperand.evaluate(x, y, z, a), rightOperand.evaluate(x, y, z, a), a);
     }
 
@@ -59,8 +59,8 @@ public abstract class GenericBinaryOperation implements GenericExpression {
     @Override
     public boolean equals(final Object obj) {
         if (obj != null && obj.getClass() == this.getClass()) {
-            return this.leftOperand.equals(((GenericBinaryOperation) obj).leftOperand)
-                    && this.rightOperand.equals(((GenericBinaryOperation) obj).rightOperand);
+            return leftOperand.equals(((GenericBinaryOperation<?>) obj).leftOperand)
+                    && rightOperand.equals(((GenericBinaryOperation<?>) obj).rightOperand);
         }
         return false;
     }

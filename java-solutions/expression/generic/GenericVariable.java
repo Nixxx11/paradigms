@@ -2,9 +2,7 @@ package expression.generic;
 
 import expression.Order;
 
-import java.util.Objects;
-
-public class GenericVariable implements GenericExpression {
+public class GenericVariable<T extends Number> implements GenericExpression<T> {
     private final String name;
 
     public GenericVariable(final String name) {
@@ -17,7 +15,7 @@ public class GenericVariable implements GenericExpression {
     }
 
     @Override
-    public <T extends Number> T evaluate(final T x, final T y, final T z, final Arithmetic<T> a) {
+    public T evaluate(final T x, final T y, final T z, final Arithmetic<T> a) {
         return switch (name) {
             case "x" -> x;
             case "y" -> y;
@@ -39,7 +37,7 @@ public class GenericVariable implements GenericExpression {
     @Override
     public boolean equals(final Object obj) {
         if (obj != null && obj.getClass() == GenericVariable.class) {
-            return Objects.equals(this.name, ((GenericVariable) obj).name);
+            return name.equals(((GenericVariable<?>) obj).name);
         }
         return false;
     }

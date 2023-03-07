@@ -32,12 +32,17 @@ public class ShortArithmetic implements Arithmetic<Short> {
     }
 
     @Override
-    public boolean isNegative(final Short n) {
-        return n < 0;
+    public int compare(final Short n1, final Short n2) {
+        return Short.compare(n1, n2);
     }
 
     @Override
     public Short valueOf(final Number n) {
         return n.shortValue();
+    }
+
+    @Override
+    public Short parse(final String s) {
+        return Short.parseShort(s);
     }
 }

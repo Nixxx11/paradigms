@@ -1,7 +1,7 @@
 package expression.generic;
 
-public class Square extends GenericUnaryOperation {
-    public Square(final GenericExpression expr) {
+public class Square<T extends Number> extends GenericUnaryOperation<T> {
+    public Square(final GenericExpression<T> expr) {
         super(expr);
     }
 
@@ -11,7 +11,7 @@ public class Square extends GenericUnaryOperation {
     }
 
     @Override
-    protected <T extends Number> T calculate(final T n, final Arithmetic<T> a) {
+    protected T calculate(final T n, final Arithmetic<T> a) {
         return a.square(n);
     }
 }

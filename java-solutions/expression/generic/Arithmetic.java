@@ -1,6 +1,6 @@
 package expression.generic;
 
-public interface Arithmetic<T extends Number> {
+public interface Arithmetic<T extends Number> extends NumberParser<T> {
     T add(T n1, T n2);
 
     T subtract(T n1, T n2);
@@ -11,17 +11,19 @@ public interface Arithmetic<T extends Number> {
 
     T mod(T n1, T n2);
 
+    int compare(T n1, T n2);
+
     T negate(T n);
 
     default T abs(T n) {
-        return isNegative(n) ? negate(n) : n;
+        return compare(n, valueOf(0)) < 0 ? negate(n) : n;
     }
 
     default T square(T n) {
         return multiply(n, n);
     }
 
-    boolean isNegative(T n);
-
     T valueOf(Number n);
+
+    T parse(String s);
 }

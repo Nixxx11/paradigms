@@ -1,7 +1,7 @@
 package expression.generic;
 
-public class GenericNegate extends GenericUnaryOperation {
-    public GenericNegate(final GenericExpression expr) {
+public class GenericNegate<T extends Number> extends GenericUnaryOperation<T> {
+    public GenericNegate(final GenericExpression<T> expr) {
         super(expr);
     }
 
@@ -11,7 +11,7 @@ public class GenericNegate extends GenericUnaryOperation {
     }
 
     @Override
-    protected <T extends Number> T calculate(final T n, final Arithmetic<T> a) {
+    protected T calculate(final T n, final Arithmetic<T> a) {
         return a.negate(n);
     }
 }
