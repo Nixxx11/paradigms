@@ -19,11 +19,5 @@ public interface Arithmetic<T extends Number> extends NumberParser<T> {
         return compare(n, valueOf(0)) < 0 ? negate(n) : n;
     }
 
-    default T square(T n) {
-        return multiply(n, n);
-    }
-
     T valueOf(Number n);
-
-    T parse(String s);
 }

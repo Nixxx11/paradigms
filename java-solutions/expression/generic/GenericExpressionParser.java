@@ -7,16 +7,16 @@ import expression.parser.ParsingException;
 import java.util.Map;
 
 public class GenericExpressionParser<T extends Number> extends BaseParser {
-    protected final Map<String, GenericBinaryOperations> binaryOperations;
-    protected final Map<String, GenericUnaryOperations> unaryOperations;
+    protected final Map<String, BinaryOperation<T>> binaryOperations;
+    protected final Map<String, OperatorUnary<T>> unaryOperations;
     protected final NumberParser<T> numberParser;
-    protected GenericBinaryOperations savedOp = null;
+    protected BinaryOperation<T> savedOperation = null;
     protected String savedToken = null;
 
     public GenericExpressionParser(
             final CharSource source,
-            final Map<String, GenericBinaryOperations> binaryOperations,
-            final Map<String, GenericUnaryOperations> unaryOperations,
+            final Map<String, BinaryOperation<T>> binaryOperations,
+            final Map<String, OperatorUnary<T>> unaryOperations,
             final NumberParser<T> numberParser
     ) {
         super(source);
@@ -42,18 +42,18 @@ public class GenericExpressionParser<T extends Number> extends BaseParser {
     }
 
     protected GenericExpression<T> finishOperation(
-            final GenericExpression<T> left, final GenericBinaryOperations op
+            final GenericExpression<T> left, final BinaryOperation<T> operation
     ) throws ParsingException {
         GenericExpression<T> right = getOperand();
         while (hasNextOperation()) {
-            final GenericBinaryOperations nextOp = getBinaryOperation();
-            if (nextOp.getOrder() >= op.getOrder()) {
-                savedOp = nextOp;
+            final BinaryOperation<T> nextOp = getBinaryOperation();
+            if (nextOp.order().ordinal() >= operation.order().ordinal()) {
+                savedOperation = nextOp;
                 break;
             }
             right = finishOperation(right, nextOp);
         }
-        return op.create(left, right);
+        return new GenericBinaryExpression<>(left, right, operation.operator());
     }
 
     protected GenericExpression<T> getOperand() throws ParsingException {
@@ -80,7 +80,7 @@ public class GenericExpressionParser<T extends Number> extends BaseParser {
             token = getToken();
         }
         if (unaryOperations.containsKey(token)) {
-            return unaryOperations.get(token).create(getOperand());
+            return new GenericUnaryExpression<>(getOperand(), unaryOperations.get(token));
         }
         return switch (token) {
             case "x", "y", "z" -> new GenericVariable<>(token);
@@ -96,10 +96,10 @@ public class GenericExpressionParser<T extends Number> extends BaseParser {
         };
     }
 
-    protected GenericBinaryOperations getBinaryOperation() throws ParsingException {
-        if (savedOp != null) {
-            final GenericBinaryOperations result = savedOp;
-            savedOp = null;
+    protected BinaryOperation<T> getBinaryOperation() throws ParsingException {
+        if (savedOperation != null) {
+            final BinaryOperation<T> result = savedOperation;
+            savedOperation = null;
             return result;
         }
         skipWhitespace();
@@ -112,7 +112,7 @@ public class GenericExpressionParser<T extends Number> extends BaseParser {
 
     protected String getToken() {
         if (savedToken != null) {
-            String result = savedToken;
+            final String result = savedToken;
             savedToken = null;
             return result;
         }
@@ -135,15 +135,15 @@ public class GenericExpressionParser<T extends Number> extends BaseParser {
 
     protected boolean hasNextOperation() {
         skipWhitespace();
-        if (savedOp != null) {
+        if (savedOperation != null) {
             return true;
         }
         if (eof()) {
             return false;
         }
-        String token = getToken();
+        final String token = getToken();
         if (binaryOperations.containsKey(token)) {
-            savedOp = binaryOperations.get(token);
+            savedOperation = binaryOperations.get(token);
             return true;
         } else {
             savedToken = token;
