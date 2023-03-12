@@ -1,32 +1,35 @@
 "use strict"
 
-function makeBinaryOperation(operator) {
-    return (leftOperand, rightOperand) => (x, y, z) => operator(leftOperand(x, y, z), rightOperand(x, y, z));
+function calculate(x, y, z, ...functions) {
+    const result = [];
+    for (const f of functions) {
+        result.push(f(x, y, z));
+    }
+    return result;
 }
 
-function makeUnaryOperation(operator) {
-    return (innerOperand) => (x, y, z) => operator(innerOperand(x, y, z));
+function makeOperation(operator) {
+    return (...operands) => (x, y, z) => operator(...calculate(x, y, z, ...operands));
 }
 
-const cnst = (value) => () => value;
+const cnst = (value) => (x, y, z) => value;
 
-const variable = (name) => (x, y, z) => {
+const variable = (name) => {
     switch (name) {
         case "x":
-            return x;
+            return (x, y, z) => x;
         case "y":
-            return y;
+            return (x, y, z) => y;
         case "z":
-            return z;
+            return (x, y, z) => z;
     }
 }
 
-const add = makeBinaryOperation((n1, n2) => n1 + n2);
-const subtract = makeBinaryOperation((n1, n2) => n1 - n2);
-const multiply = makeBinaryOperation((n1, n2) => n1 * n2);
-const divide = makeBinaryOperation((n1, n2) => n1 / n2);
-
-const negate = makeUnaryOperation((n) => -n);
+const add = makeOperation((n1, n2) => n1 + n2);
+const subtract = makeOperation((n1, n2) => n1 - n2);
+const multiply = makeOperation((n1, n2) => n1 * n2);
+const divide = makeOperation((n1, n2) => n1 / n2);
+const negate = makeOperation((n) => -n);
 
 function parseOperation(string, getOperand) {
     switch (string) {
