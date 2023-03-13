@@ -1,27 +1,23 @@
 "use strict"
 
-function calculate(x, y, z, ...functions) {
-    const result = [];
-    for (const f of functions) {
-        result.push(f(x, y, z));
-    }
-    return result;
+function substitution(...vars) {
+    return (f) => f(...vars);
 }
 
 function makeOperation(operator) {
-    return (...operands) => (x, y, z) => operator(...calculate(x, y, z, ...operands));
+    return (...operands) => (...vars) => operator(...operands.map(substitution(...vars)));
 }
 
-const cnst = (value) => (x, y, z) => value;
+const cnst = (value) => (...vars) => value;
 
 const variable = (name) => {
     switch (name) {
         case "x":
-            return (x, y, z) => x;
+            return (...vars) => vars[0];
         case "y":
-            return (x, y, z) => y;
+            return (...vars) => vars[1];
         case "z":
-            return (x, y, z) => z;
+            return (...vars) => vars[2];
     }
 }
 
@@ -31,40 +27,54 @@ const multiply = makeOperation((n1, n2) => n1 * n2);
 const divide = makeOperation((n1, n2) => n1 / n2);
 const negate = makeOperation((n) => -n);
 
-function parseOperation(string, getOperand) {
+function parseOperation(string, getOperands) {
     switch (string) {
         case "x":
         case "y":
         case "z":
             return variable(string);
-        case "+":
-            return createBinaryExpression(add, getOperand);
-        case "-":
-            return createBinaryExpression(subtract, getOperand);
-        case "*":
-            return createBinaryExpression(multiply, getOperand);
-        case "/":
-            return createBinaryExpression(divide, getOperand);
         case "negate":
-            return negate(getOperand());
+            return negate(...getOperands(1));
+        case "+":
+            return add(...getOperands(2));
+        case "-":
+            return subtract(...getOperands(2));
+        case "*":
+            return multiply(...getOperands(2));
+        case "/":
+            return divide(...getOperands(2));
         default:
             return cnst(parseInt(string));
     }
 }
 
-function createBinaryExpression(operator, getOperand) {
-    const right = getOperand();
-    return operator(getOperand(), right);
-}
-
 function parse(expression) {
     const tokens = expression.split(" ");
     const stack = [];
-    const getOperand = () => stack.pop();
+    const getOperands = (number) => stack.splice(-number);
     for (const token of tokens) {
         if (token.length !== 0) {
-            stack.push(parseOperation(token, getOperand));
+            stack.push(parseOperation(token, getOperands));
         }
     }
-    return getOperand();
+    return stack.pop();
 }
+
+/*
+const test = add(
+    subtract(
+        multiply(
+            variable("x"),
+            variable("x")
+        ),
+        multiply(
+            cnst(2),
+            variable("x")
+        )
+    ),
+    cnst(1)
+);
+for (let i = 0; i <= 10; i++) {
+    println(test(i));
+}
+ */
