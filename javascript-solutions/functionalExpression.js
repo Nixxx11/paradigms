@@ -27,15 +27,26 @@ const multiply = makeOperation((n1, n2) => n1 * n2);
 const divide = makeOperation((n1, n2) => n1 / n2);
 const negate = makeOperation((n) => -n);
 
+const one = cnst(1);
+const two = cnst(2);
+const madd = makeOperation((n1, n2, n3) => n1 * n2 + n3);
+const floor = makeOperation(Math.floor);
+const ceil = makeOperation(Math.ceil);
+
 const map = {
+    "one": [one, 0],
+    "two": [two, 0],
     "x": [variable("x"), 0],
     "y": [variable("y"), 0],
     "z": [variable("z"), 0],
     "negate": [negate, 1],
+    "_": [floor, 1],
+    "^": [ceil, 1],
     "+": [add, 2],
     "-": [subtract, 2],
     "*": [multiply, 2],
-    "/": [divide, 2]
+    "/": [divide, 2],
+    "*+": [madd, 3]
 };
 
 function parseOperation(string, makeExpression) {
