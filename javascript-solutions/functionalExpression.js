@@ -71,21 +71,21 @@ function parse(expression) {
     return stack.pop();
 }
 
-/*
-const test = add(
-    subtract(
-        multiply(
-            variable("x"),
-            variable("x")
+function test() {
+    const expression = add(
+        subtract(
+            multiply(
+                variable("x"),
+                variable("x")
+            ),
+            multiply(
+                cnst(2),
+                variable("x")
+            )
         ),
-        multiply(
-            cnst(2),
-            variable("x")
-        )
-    ),
-    cnst(1)
-);
-for (let i = 0; i <= 10; i++) {
-    println(test(i));
+        cnst(1)
+    );
+    for (let i = 0; i <= 10; i++) {
+        println(expression(i));
+    }
 }
- */
