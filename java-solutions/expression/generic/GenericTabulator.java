@@ -23,7 +23,7 @@ public class GenericTabulator implements Tabulator {
             final int y1, final int y2,
             final int z1, final int z2
     ) throws ParsingException {
-        final Arithmetic<?> a = MODES.getOrDefault(mode, null);
+        final Arithmetic<?> a = MODES.get(mode);
         if (a == null) {
             throw new IllegalArgumentException("Unknown mode: " + mode);
         }
@@ -42,6 +42,7 @@ public class GenericTabulator implements Tabulator {
     private <T extends Number> GenericExpression<T> parse(
             final Arithmetic<T> arithmetic, final String expression
     ) throws ParsingException {
+        // :NOTE: precreate parser
         final Map<String, BinaryOperation<T>> BINARY_OPERATIONS = Map.of(
                 "+", new BinaryOperation<>(arithmetic::add, Order.ADDITIVE),
                 "-", new BinaryOperation<>(arithmetic::subtract, Order.ADDITIVE),
