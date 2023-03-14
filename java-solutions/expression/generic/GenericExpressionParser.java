@@ -25,6 +25,10 @@ public class GenericExpressionParser<T extends Number> extends BaseParser {
         this.numberParser = numberParser;
     }
 
+    public GenericExpressionParser(final CharSource source, final TabulatingMode<T> mode) {
+        this(source, mode.binaryOperations, mode.unaryOperations, mode.arithmetic);
+    }
+
     public GenericExpression<T> parseExpression() throws ParsingException {
         final GenericExpression<T> result = parse();
         if (!eof() || savedToken != null) {
