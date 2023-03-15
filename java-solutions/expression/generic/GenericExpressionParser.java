@@ -25,19 +25,15 @@ public class GenericExpressionParser<T extends Number> extends BaseParser {
         this.numberParser = numberParser;
     }
 
-    public GenericExpressionParser(final CharSource source, final TabulatingMode<T> mode) {
-        this(source, mode.binaryOperations, mode.unaryOperations, mode.arithmetic);
-    }
-
-    public GenericExpression<T> parseExpression() throws ParsingException {
-        final GenericExpression<T> result = parse();
+    public GenericExpression<T> parse() throws ParsingException {
+        final GenericExpression<T> result = parseSection();
         if (!eof() || savedToken != null) {
             throw error(String.valueOf(CharSource.EOF), getToken());
         }
         return result;
     }
 
-    protected GenericExpression<T> parse() throws ParsingException {
+    protected GenericExpression<T> parseSection() throws ParsingException {
         GenericExpression<T> left = getOperand();
         while (hasNextOperation()) {
             left = finishOperation(left, getBinaryOperation());
@@ -89,7 +85,7 @@ public class GenericExpressionParser<T extends Number> extends BaseParser {
         return switch (token) {
             case "x", "y", "z" -> new GenericVariable<>(token);
             case "(" -> {
-                final GenericExpression<T> result = parse();
+                final GenericExpression<T> result = parseSection();
                 final String nextToken = getToken();
                 if (!")".equals(nextToken)) {
                     throw error(")", nextToken);

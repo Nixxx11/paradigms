@@ -1,6 +1,7 @@
 package expression.generic;
 
 import expression.Order;
+import expression.parser.CharSource;
 
 import java.util.Map;
 
@@ -23,5 +24,10 @@ public class TabulatingMode<T extends Number> {
                 "abs", arithmetic::abs,
                 "square", (n) -> arithmetic.multiply(n, n)
         );
+    }
+
+
+    public GenericExpressionParser<T> makeParser(final CharSource source) {
+        return new GenericExpressionParser<>(source, binaryOperations, unaryOperations, arithmetic);
     }
 }

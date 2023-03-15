@@ -35,17 +35,13 @@ public class GenericTabulator implements Tabulator {
             final int y1, final int y2,
             final int z1, final int z2
     ) throws ParsingException {
-        return evaluate(mode.arithmetic, parse(mode, expression), x1, x2, y1, y2, z1, z2);
-    }
-
-    private <T extends Number> GenericExpression<T> parse(
-            final TabulatingMode<T> mode, final String expression
-    ) throws ParsingException {
-        final GenericExpressionParser<T> parser = new GenericExpressionParser<>(
-                new StringSource(expression),
-                mode
+        return evaluate(
+                mode.arithmetic,
+                mode.makeParser(new StringSource(expression)).parse(),
+                x1, x2,
+                y1, y2,
+                z1, z2
         );
-        return parser.parseExpression();
     }
 
     private <T extends Number> Object[][][] evaluate(
