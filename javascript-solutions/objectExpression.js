@@ -4,11 +4,14 @@ function Const(number) {
     this.number = number;
 }
 
+const zero = new Const(0);
+const one = new Const(1);
+
 Const.prototype.evaluate = function (...vars) {
     return this.number;
 }
 Const.prototype.diff = function (varName) {
-    return new Const(0);
+    return zero;
 }
 Const.prototype.toString = function () {
     return this.number.toString();
@@ -30,11 +33,7 @@ Variable.prototype.evaluate = function (...vars) {
     }
 }
 Variable.prototype.diff = function (varName) {
-    if (varName === this.name) {
-        return new Const(1);
-    } else {
-        return new Const(0);
-    }
+    return varName === this.name ? one : zero;
 }
 Variable.prototype.toString = function () {
     return this.name;
@@ -60,6 +59,11 @@ Operation.prototype.toString = function () {
     ) + this.symbol;
 }
 
+function inherit(child, parent) {
+    child.prototype = Object.create(parent.prototype);
+    child.prototype.constructor = child;
+}
+
 
 function Negate(operand) {
     Operation.call(
@@ -70,8 +74,7 @@ function Negate(operand) {
     );
 }
 
-Negate.prototype = Object.create(Operation.prototype);
-Negate.prototype.constructor = Negate;
+inherit(Negate, Operation);
 
 
 function Add(operand1, operand2) {
@@ -83,8 +86,7 @@ function Add(operand1, operand2) {
     );
 }
 
-Add.prototype = Object.create(Operation.prototype);
-Add.prototype.constructor = Add;
+inherit(Add, Operation);
 
 
 function Subtract(operand1, operand2) {
@@ -96,8 +98,7 @@ function Subtract(operand1, operand2) {
     );
 }
 
-Subtract.prototype = Object.create(Operation.prototype);
-Subtract.prototype.constructor = Subtract;
+inherit(Subtract, Operation);
 
 
 function Multiply(operand1, operand2) {
@@ -109,8 +110,7 @@ function Multiply(operand1, operand2) {
     );
 }
 
-Multiply.prototype = Object.create(Operation.prototype);
-Multiply.prototype.constructor = Multiply;
+inherit(Multiply, Operation);
 Multiply.prototype.diff = function (varName) {
     return new Add(
         new Multiply(
@@ -134,8 +134,7 @@ function Divide(operand1, operand2) {
     );
 }
 
-Divide.prototype = Object.create(Operation.prototype);
-Divide.prototype.constructor = Divide;
+inherit(Divide, Operation);
 Divide.prototype.diff = function (varName) {
     return new Divide(
         new Subtract(
@@ -155,21 +154,25 @@ Divide.prototype.diff = function (varName) {
     );
 }
 
+const symbols = {
+    "x": new Variable("x"),
+    "y": new Variable("y"),
+    "z": new Variable("z")
+}
 
-const map = {
-    "x": [new Variable("x"), 0],
-    "y": [new Variable("y"), 0],
-    "z": [new Variable("z"), 0],
-    "negate": [Negate, 1],
-    "+": [Add, 2],
-    "-": [Subtract, 2],
-    "*": [Multiply, 2],
-    "/": [Divide, 2]
+const operations = {
+    "negate": Negate,
+    "+": Add,
+    "-": Subtract,
+    "*": Multiply,
+    "/": Divide
 };
 
 function parseOperation(string, makeExpression) {
-    if (string in map) {
-        return makeExpression(...map[string]);
+    if (string in symbols) {
+        return symbols[string];
+    } else if (string in operations) {
+        return makeExpression(operations[string]);
     } else {
         return new Const(parseInt(string));
     }
@@ -178,8 +181,8 @@ function parseOperation(string, makeExpression) {
 function parse(expression) {
     const tokens = expression.split(" ");
     const stack = [];
-    const makeExpression = (operation, numberOfOperands) => {
-        return numberOfOperands === 0 ? operation : new operation(...stack.splice(-numberOfOperands));
+    const makeExpression = (operation) => {
+        return new operation(...stack.splice(-operation.length));
     }
     for (const token of tokens) {
         if (token.length !== 0) {
