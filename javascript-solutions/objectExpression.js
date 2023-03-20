@@ -1,151 +1,116 @@
 "use strict"
 
-const expressions = (function () {
-    function Const(number) {
-        this.number = number;
-    }
+const Const = function (number) {
+    this.number = number;
+}
+const zero = new Const(0);
+const one = new Const(1);
+Const.prototype.evaluate = function (...vars) {
+    return this.number;
+};
+Const.prototype.diff = function (varName) {
+    return zero;
+};
+Const.prototype.toString = function () {
+    return this.number.toString();
+};
 
-    const zero = new Const(0);
-    const one = new Const(1);
+const Variable = function (name) {
+    this.name = name;
+}
+Variable.names = {
+    "x": 0,
+    "y": 1,
+    "z": 2
+};
+Variable.prototype.evaluate = function (...vars) {
+    return vars[Variable.names[this.name]];
+};
+Variable.prototype.diff = function (varName) {
+    return varName === this.name ? one : zero;
+};
+Variable.prototype.toString = function () {
+    return this.name;
+};
 
-    Const.prototype.evaluate = function (...vars) {
-        return this.number;
-    }
-    Const.prototype.diff = function (varName) {
-        return zero;
-    }
-    Const.prototype.toString = function () {
-        return this.number.toString();
-    }
-
-
-    function Variable(name) {
-        this.name = name;
-    }
-
-    Variable.prototype.evaluate = function (...vars) {
-        switch (this.name) {
-            case "x":
-                return vars[0];
-            case "y":
-                return vars[1];
-            case "z":
-                return vars[2];
-        }
-    }
-    Variable.prototype.diff = function (varName) {
-        return varName === this.name ? one : zero;
-    }
-    Variable.prototype.toString = function () {
-        return this.name;
-    }
-
-
-    function Operation(...operands) {
+const operationsList = [];
+const makeOperation = (function () {
+    function AbstractOperation(...operands) {
         this.operands = operands;
     }
 
-    Operation.prototype.evaluate = function (...vars) {
+    AbstractOperation.prototype.evaluate = function (...vars) {
         return this.operator(...this.operands.map((expression) => expression.evaluate(...vars)));
     }
-    Operation.prototype.diff = function (varName) {
+    AbstractOperation.prototype.diff = function (varName) {
         return new this.constructor(...this.operands.map((expression) => expression.diff(varName)));
     }
-    Operation.prototype.toString = function () {
+    AbstractOperation.prototype.toString = function () {
         return this.operands.reduce(
             (string, expression) => string + expression.toString() + " ",
             ""
         ) + this.symbol;
     }
 
-    function inherit(constructor, operator, symbol) {
-        constructor.prototype = Object.create(Operation.prototype);
-        constructor.prototype.constructor = constructor;
-        constructor.prototype.operator = operator;
-        constructor.prototype.symbol = symbol;
+    return function (operator, symbol) {
+        const NewOperation = function (...operands) {
+            AbstractOperation.call(this, ...operands);
+        }
+        NewOperation.argsCount = operator.length;
+        NewOperation.prototype = Object.create(AbstractOperation.prototype);
+        NewOperation.prototype.constructor = NewOperation;
+        NewOperation.prototype.operator = operator;
+        NewOperation.prototype.symbol = symbol;
+        operationsList.push(NewOperation);
+        return NewOperation;
     }
+})();
 
+const Negate = makeOperation((n) => -n, "negate");
 
-    function Negate(operand) {
-        Operation.call(this, operand);
-    }
+const Add = makeOperation((n1, n2) => n1 + n2, "+");
 
-    inherit(Negate, (n) => -n, "negate");
+const Subtract = makeOperation((n1, n2) => n1 - n2, "-");
 
+const Multiply = makeOperation((n1, n2) => n1 * n2, "*");
+Multiply.prototype.diff = function (varName) {
+    return new Add(
+        new Multiply(
+            this.operands[0],
+            this.operands[1].diff(varName)
+        ),
+        new Multiply(
+            this.operands[0].diff(varName),
+            this.operands[1]
+        )
+    );
+};
 
-    function Add(operand1, operand2) {
-        Operation.call(this, operand1, operand2);
-    }
-
-    inherit(Add, (n1, n2) => n1 + n2, "+");
-
-
-    function Subtract(operand1, operand2) {
-        Operation.call(this, operand1, operand2);
-    }
-
-    inherit(Subtract, (n1, n2) => n1 - n2, "-");
-
-
-    function Multiply(operand1, operand2) {
-        Operation.call(this, operand1, operand2);
-    }
-
-    inherit(Multiply, (n1, n2) => n1 * n2, "*");
-    Multiply.prototype.diff = function (varName) {
-        return new Add(
-            new Multiply(
-                this.operands[0],
-                this.operands[1].diff(varName)
-            ),
+const Divide = makeOperation((n1, n2) => n1 / n2, "/");
+Divide.prototype.diff = function (varName) {
+    return new Divide(
+        new Subtract(
             new Multiply(
                 this.operands[0].diff(varName),
                 this.operands[1]
-            )
-        );
-    }
-
-
-    function Divide(operand1, operand2) {
-        Operation.call(this, operand1, operand2);
-    }
-
-    inherit(Divide, (n1, n2) => n1 / n2, "/");
-    Divide.prototype.diff = function (varName) {
-        return new Divide(
-            new Subtract(
-                new Multiply(
-                    this.operands[0].diff(varName),
-                    this.operands[1]
-                ),
-                new Multiply(
-                    this.operands[0],
-                    this.operands[1].diff(varName)
-                )
             ),
             new Multiply(
-                this.operands[1],
-                this.operands[1]
+                this.operands[0],
+                this.operands[1].diff(varName)
             )
-        );
-    }
-    return {Const, Variable, operations: {Negate, Add, Subtract, Multiply, Divide}, variables: ["x", "y", "z"]};
-})();
-
-const Const = expressions.Const;
-const Variable = expressions.Variable;
-const Negate = expressions.operations.Negate;
-const Add = expressions.operations.Add;
-const Subtract = expressions.operations.Subtract;
-const Multiply = expressions.operations.Multiply;
-const Divide = expressions.operations.Divide;
+        ),
+        new Multiply(
+            this.operands[1],
+            this.operands[1]
+        )
+    );
+};
 
 const parse = (function () {
-    const symbols = new Map(expressions.variables.map(
+    const symbols = new Map(Object.keys(Variable.names).map(
         (varName) => [varName, new Variable(varName)]
     ));
-
-    const operations = new Map(Object.values(expressions.operations).map(
+    const operations = new Map(operationsList.map(
         (constructor) => [constructor.prototype.symbol, constructor]
     ));
 
@@ -163,7 +128,7 @@ const parse = (function () {
         const tokens = expression.split(" ");
         const stack = [];
         const makeExpression = (operation) => {
-            return new operation(...stack.splice(-operation.length));
+            return new operation(...stack.splice(-operation.argsCount));
         }
         for (const token of tokens) {
             if (token.length !== 0) {
@@ -171,5 +136,5 @@ const parse = (function () {
             }
         }
         return stack.pop();
-    }
+    };
 })();
