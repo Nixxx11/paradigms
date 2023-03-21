@@ -43,28 +43,22 @@ const expressions = (function () {
     AbstractOperation.prototype.evaluate = function (...vars) {
         return this.operator(...this.operands.map((expression) => expression.evaluate(...vars)));
     }
-    // :NOTE: лучше пусть функция сама решает, как она считает производную
-    AbstractOperation.prototype.diff = function (varName) {
-        return new this.constructor(...this.operands.map((expression) => expression.diff(varName)));
-    }
     AbstractOperation.prototype.toString = function () {
         return this.operands.join(" ") + " " + this.symbol;
     }
 
     const operationsList = [];
 
-    function makeOperation(operator, symbol, argsCount = operator.length) {
+    function makeOperation(operator, symbol, diffFunction, argsCount = operator.length) {
         const NewOperation = function (...operands) {
             AbstractOperation.call(this, ...operands);
         }
         NewOperation.argsCount = argsCount;
-        NewOperation.overrideDiff = function (diffFunction) {
-            this.prototype.diff = diffFunction;
-        }
         NewOperation.prototype = Object.create(AbstractOperation.prototype);
         NewOperation.prototype.constructor = NewOperation;
         NewOperation.prototype.operator = operator;
         NewOperation.prototype.symbol = symbol;
+        NewOperation.prototype.diff = diffFunction;
         operationsList.push(NewOperation);
         return NewOperation;
     }
@@ -73,47 +67,53 @@ const expressions = (function () {
 })();
 const makeOperation = expressions.makeOperation;
 
-const Negate = makeOperation((n) => -n, "negate");
+const defaultDiff = function (varName) {
+    return new this.constructor(...this.operands.map((expression) => expression.diff(varName)));
+};
 
-const Add = makeOperation((n1, n2) => n1 + n2, "+");
+const Negate = makeOperation((n) => -n, "negate", defaultDiff);
 
-const Subtract = makeOperation((n1, n2) => n1 - n2, "-");
+const Add = makeOperation((n1, n2) => n1 + n2, "+", defaultDiff);
 
-const Multiply = makeOperation((n1, n2) => n1 * n2, "*");
-Multiply.overrideDiff(function (varName) {
-    return new Add(
-        new Multiply(
-            this.operands[0],
-            this.operands[1].diff(varName)
-        ),
-        new Multiply(
-            this.operands[0].diff(varName),
-            this.operands[1]
-        )
-    );
-});
+const Subtract = makeOperation((n1, n2) => n1 - n2, "-", defaultDiff);
 
-const Divide = makeOperation((n1, n2) => n1 / n2, "/");
-Divide.overrideDiff(function (varName) {
-    return new Divide(
-        new Subtract(
-            new Multiply(
-                this.operands[0].diff(varName),
-                this.operands[1]
-            ),
+const Multiply = makeOperation((n1, n2) => n1 * n2, "*",
+    function (varName) {
+        return new Add(
             new Multiply(
                 this.operands[0],
                 this.operands[1].diff(varName)
+            ),
+            new Multiply(
+                this.operands[0].diff(varName),
+                this.operands[1]
             )
-        ),
-        new Multiply(
-            this.operands[1],
-            this.operands[1]
-        )
-    );
-});
+        );
+    }
+);
 
-const vectorsLength = (function () {
+const Divide = makeOperation((n1, n2) => n1 / n2, "/",
+    function (varName) {
+        return new Divide(
+            new Subtract(
+                new Multiply(
+                    this.operands[0].diff(varName),
+                    this.operands[1]
+                ),
+                new Multiply(
+                    this.operands[0],
+                    this.operands[1].diff(varName)
+                )
+            ),
+            new Multiply(
+                this.operands[1],
+                this.operands[1]
+            )
+        );
+    }
+);
+
+const distances = (function () {
     const sumSqOperator = (...numbers) => numbers.reduce((squareSum, current) => squareSum + current * current, 0);
     const sumSqDiff = function (varName) {
         return new Multiply(
@@ -127,52 +127,44 @@ const vectorsLength = (function () {
         )
     };
     const distanceOperator = (...numbers) => Math.sqrt(sumSqOperator(...numbers));
-    const distanceDiff = (argsCount) => function (varName) {
+    const distanceDiff = function (varName) {
         return new Multiply(
             new Divide(
                 half,
                 this
             ),
-            // :NOTE: уже есть sumSqDiff
-            new sumSq[argsCount](...this.operands).diff(varName)
+            sumSqDiff.call(this, varName)
         )
     };
 
-    const sumSq = {};
-    const distance = {};
-    for (let i = 0; i <= 5; i++) {
-        sumSq[i] = makeOperation(sumSqOperator, "sumsq" + i, i);
-        sumSq[i].overrideDiff(sumSqDiff);
-        distance[i] = makeOperation(distanceOperator, "distance" + i, i);
-        distance[i].overrideDiff(distanceDiff(i));
+    const sumSq = [];
+    const distance = [];
+    for (let i = 2; i <= 5; i++) {
+        sumSq.push(makeOperation(sumSqOperator, "sumsq" + i, sumSqDiff, i));
+        distance.push(makeOperation(distanceOperator, "distance" + i, distanceDiff, i));
     }
 
     return {sumSq, distance};
 })();
-// :NOTE: можно сделать в 2 строчки
-const Sumsq2 = vectorsLength.sumSq[2];
-const Sumsq3 = vectorsLength.sumSq[3];
-const Sumsq4 = vectorsLength.sumSq[4];
-const Sumsq5 = vectorsLength.sumSq[5];
-const Distance2 = vectorsLength.distance[2];
-const Distance3 = vectorsLength.distance[3];
-const Distance4 = vectorsLength.distance[4];
-const Distance5 = vectorsLength.distance[5];
+const [Sumsq2, Sumsq3, Sumsq4, Sumsq5] = distances.sumSq;
+const [Distance2, Distance3, Distance4, Distance5] = distances.distance;
 
 const parse = (function () {
-    // :NOTE: можно без new Map
-    const symbols = new Map(Object.keys(Variable.names).map(
-        (varName) => [varName, new Variable(varName)]
-    ));
-    const operations = new Map(expressions.operationsList.map(
-        (constructor) => [constructor.prototype.symbol, constructor]
-    ));
+    const symbols = Object.keys(Variable.names).reduce(
+        (map, varName) => ({...map, [varName]: new Variable(varName)}),
+        {}
+    );
+    const operations = expressions.operationsList.reduce(
+        (map, constructor) => ({...map, [constructor.prototype.symbol]: constructor}),
+        {}
+    );
+    const curry = (f) => (arg) => (...args) => f(arg, ...args);
 
-    function parseOperation(string, makeExpression) {
-        if (symbols.has(string)) {
-            return symbols.get(string);
-        } else if (operations.has(string)) {
-            return makeExpression(operations.get(string));
+    function parseOperation(makeExpression, string) {
+        if (string in symbols) {
+            return symbols[string];
+        } else if (string in operations) {
+            return makeExpression(operations[string]);
         } else {
             return new Const(parseInt(string));
         }
@@ -181,13 +173,12 @@ const parse = (function () {
     return function (expression) {
         const tokens = expression.split(" ");
         const stack = [];
-        // :NOTE: можно проще - не передавать в parseOperation функцию makeExpression
-        const makeExpression = (operation) => {
-            return new operation(...stack.splice(-operation.argsCount));
-        }
+        const parseWithStack = curry(parseOperation)(
+            (operation) => new operation(...stack.splice(-operation.argsCount))
+        );
         for (const token of tokens) {
             if (token.length !== 0) {
-                stack.push(parseOperation(token, makeExpression));
+                stack.push(parseWithStack(token));
             }
         }
         return stack.pop();
