@@ -43,6 +43,7 @@ const expressions = (function () {
     AbstractOperation.prototype.evaluate = function (...vars) {
         return this.operator(...this.operands.map((expression) => expression.evaluate(...vars)));
     }
+    // :NOTE: лучше пусть функция сама решает, как она считает производную
     AbstractOperation.prototype.diff = function (varName) {
         return new this.constructor(...this.operands.map((expression) => expression.diff(varName)));
     }
@@ -132,6 +133,7 @@ const vectorsLength = (function () {
                 half,
                 this
             ),
+            // :NOTE: уже есть sumSqDiff
             new sumSq[argsCount](...this.operands).diff(varName)
         )
     };
@@ -147,6 +149,7 @@ const vectorsLength = (function () {
 
     return {sumSq, distance};
 })();
+// :NOTE: можно сделать в 2 строчки
 const Sumsq2 = vectorsLength.sumSq[2];
 const Sumsq3 = vectorsLength.sumSq[3];
 const Sumsq4 = vectorsLength.sumSq[4];
@@ -157,6 +160,7 @@ const Distance4 = vectorsLength.distance[4];
 const Distance5 = vectorsLength.distance[5];
 
 const parse = (function () {
+    // :NOTE: можно без new Map
     const symbols = new Map(Object.keys(Variable.names).map(
         (varName) => [varName, new Variable(varName)]
     ));
@@ -177,6 +181,7 @@ const parse = (function () {
     return function (expression) {
         const tokens = expression.split(" ");
         const stack = [];
+        // :NOTE: можно проще - не передавать в parseOperation функцию makeExpression
         const makeExpression = (operation) => {
             return new operation(...stack.splice(-operation.argsCount));
         }
