@@ -12,14 +12,14 @@ public class TabulatingMode<T extends Number> {
 
     public TabulatingMode(final Arithmetic<T> arithmetic) {
         this.arithmetic = arithmetic;
-        this.binaryOperations = Map.of(
+        binaryOperations = Map.of(
                 "+", new BinaryOperation<>(arithmetic::add, Order.ADDITIVE),
                 "-", new BinaryOperation<>(arithmetic::subtract, Order.ADDITIVE),
                 "*", new BinaryOperation<>(arithmetic::multiply, Order.MULTIPLICATIVE),
                 "/", new BinaryOperation<>(arithmetic::divide, Order.MULTIPLICATIVE),
                 "mod", new BinaryOperation<>(arithmetic::mod, Order.MULTIPLICATIVE)
         );
-        this.unaryOperations = Map.of(
+        unaryOperations = Map.of(
                 "-", arithmetic::negate,
                 "abs", arithmetic::abs,
                 "square", (n) -> arithmetic.multiply(n, n)
