@@ -14,7 +14,6 @@ Const.prototype.prefix = Const.prototype.toString = function () {
 };
 
 const zero = new Const(0);
-const half = new Const(0.5);
 const one = new Const(1);
 const two = new Const(2);
 
@@ -67,78 +66,64 @@ const expressions = (function () {
         return NewOperation;
     }
 
-    return {makeOperation, operationsList}
+    return {makeOperation, operationsList};
 })();
 const makeOperation = expressions.makeOperation;
-
-const defaultDiff = function (varName) {
-    return new this.constructor(...this.operands.map((expression) => expression.diff(varName)));
+const sumExpression = (...operands) => operands.reduce((accumulator, expression) => new Add(accumulator, expression));
+const diffFromCoefficients = function (varName, operands, coefficients) {
+    return sumExpression(...(operands.map(
+        (operand, index) => new Multiply(coefficients[index], operand.diff(varName))
+    )));
 };
 
-const Negate = makeOperation((n) => -n, "negate", defaultDiff);
+const Negate = makeOperation((n) => -n, "negate", function (varName) {
+    return new Negate(this.operands[0].diff(varName));
+});
 
-const Add = makeOperation((n1, n2) => n1 + n2, "+", defaultDiff);
+const Add = makeOperation((n1, n2) => n1 + n2, "+", function (varName) {
+    return new Add(this.operands[0].diff(varName), this.operands[1].diff(varName));
+});
 
-const Subtract = makeOperation((n1, n2) => n1 - n2, "-", defaultDiff);
+const Subtract = makeOperation((n1, n2) => n1 - n2, "-", function (varName) {
+    return new Subtract(this.operands[0].diff(varName), this.operands[1].diff(varName));
+});
 
-const Multiply = makeOperation((n1, n2) => n1 * n2, "*",
-    function (varName) {
-        return new Add(
-            new Multiply(
+const Multiply = makeOperation((n1, n2) => n1 * n2, "*", function (varName) {
+    return diffFromCoefficients(varName, this.operands, [this.operands[1], this.operands[0]]);
+});
+
+const Divide = makeOperation((n1, n2) => n1 / n2, "/", function (varName) {
+    return diffFromCoefficients(varName, this.operands, [
+        new Divide(
+            one,
+            this.operands[1]
+        ),
+        new Negate(
+            new Divide(
                 this.operands[0],
-                this.operands[1].diff(varName)
-            ),
-            new Multiply(
-                this.operands[0].diff(varName),
-                this.operands[1]
-            )
-        );
-    }
-);
-
-const Divide = makeOperation((n1, n2) => n1 / n2, "/",
-    function (varName) {
-        return new Subtract(
-            new Divide(
-                this.operands[0].diff(varName),
-                this.operands[1]
-            ),
-            new Divide(
-                new Multiply(
-                    this.operands[0],
-                    this.operands[1].diff(varName)
-                ),
                 new Multiply(
                     this.operands[1],
                     this.operands[1]
                 )
             )
-        );
-    }
-);
+        )
+    ]);
+});
 
 const distances = (function () {
     const sumSqOperator = (...numbers) => numbers.reduce((squareSum, current) => squareSum + current * current, 0);
     const sumSqDiff = function (varName) {
         return new Multiply(
-            this.operands.map((expression) =>
-                new Multiply(
-                    expression,
-                    expression.diff(varName)
-                )
-            ).reduce((accumulator, expression) => new Add(accumulator, expression)),
-            two
-        )
+            two,
+            diffFromCoefficients(varName, this.operands, this.operands)
+        );
     };
     const distanceOperator = (...numbers) => Math.sqrt(sumSqOperator(...numbers));
     const distanceDiff = function (varName) {
-        return new Multiply(
-            new Divide(
-                half,
-                this
-            ),
-            sumSqDiff.call(this, varName)
-        )
+        return new Divide(
+            diffFromCoefficients(varName, this.operands, this.operands),
+            this
+        );
     };
 
     const sumSq = [];
@@ -180,8 +165,7 @@ const parser = (function () {
     function parseSuffix(expression) {
         const tokens = expression.split(" ").filter((token) => token.length > 0);
         const stack = [];
-        for (let i = 0; i < tokens.length; i++) {
-            const token = tokens[i];
+        tokens.forEach((token, i) => {
             if (token in symbols) {
                 stack.push(symbols[token]);
             } else if (token in operations) {
@@ -196,25 +180,25 @@ const parser = (function () {
                 check(number.toString() === token, i, token + " is not a valid token");
                 stack.push(new Const(number));
             }
-        }
+        });
         const result = stack.pop();
         check(stack.length === 0, tokens.length, "Excess tokens: " + stack);
         return result;
     }
 
-    const parentheses = {"(": "(", ")": ")"};
+    const parentheses = {"(": ")", ")": "("};
 
-    function splitWithParentheses(str) {
+    function splitWithParentheses(string) {
         const result = [];
-        for (let pos = 0; pos < str.length; pos++) {
-            if (str.charAt(pos) in parentheses) {
-                result.push(str.charAt(pos));
-            } else if (str.charAt(pos) !== " ") {
-                const from = pos;
-                while (pos + 1 < str.length && !(str.charAt(pos + 1) in parentheses) && str.charAt(pos + 1) !== " ") {
-                    pos++;
+        for (let i = 0; i < string.length; i++) {
+            if (string.charAt(i) in parentheses) {
+                result.push(string.charAt(i));
+            } else if (string.charAt(i) !== " ") {
+                const from = i;
+                while (i + 1 < string.length && !(string.charAt(i + 1) in parentheses) && string.charAt(i + 1) !== " ") {
+                    i++;
                 }
-                result.push(str.substring(from, pos + 1));
+                result.push(string.substring(from, i + 1));
             }
         }
         return result;
@@ -236,11 +220,12 @@ const parser = (function () {
                 while (i < tokens.length && tokens[i] !== ")") {
                     args.push(parseOperation());
                 }
-                check(tokens[i] === ")", i, "No ')' for " + operation.prototype.symbol);
+                check(i < tokens.length, i, "No ')' for " + operation.prototype.symbol);
                 check(
                     operation.argsCount === args.length,
                     i,
-                    operation.argsCount + " arguments expected for '" + operation.prototype.symbol + "', got " + args.length
+                    operation.argsCount + " arguments expected for '" + operation.prototype.symbol +
+                    "', got " + args.length
                 );
                 i++;
                 return new operation(...args);
