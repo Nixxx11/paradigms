@@ -72,7 +72,7 @@ const makeOperation = expressions.makeOperation;
 const sumExpression = (...operands) => operands.reduce((accumulator, expression) => new Add(accumulator, expression));
 const diffFromCoefficients = function (varName, operands, coefficients) {
     return sumExpression(...(operands.map(
-        (operand, index) => new Multiply(coefficients[index], operand.diff(varName))
+        (operand, i) => new Multiply(coefficients[i], operand.diff(varName))
     )));
 };
 
@@ -169,12 +169,12 @@ const parser = (function () {
             if (token in symbols) {
                 stack.push(symbols[token]);
             } else if (token in operations) {
-                const operation = operations[token];
+                const Operation = operations[token];
                 check(
-                    stack.length >= operation.argsCount,
-                    i, "'" + operation.prototype.symbol + "' does not have enough operands"
+                    stack.length >= Operation.argsCount,
+                    i, "'" + Operation.prototype.symbol + "' does not have enough operands"
                 );
-                stack.push(new operation(...stack.splice(-operation.argsCount)));
+                stack.push(new Operation(...stack.splice(-Operation.argsCount)));
             } else {
                 const number = parseInt(token);
                 check(number.toString() === token, i, token + " is not a valid token");
@@ -185,6 +185,7 @@ const parser = (function () {
         check(stack.length === 0, tokens.length, "Excess tokens: " + stack);
         return result;
     }
+
 
     const parentheses = {"(": ")", ")": "("};
 
@@ -212,29 +213,33 @@ const parser = (function () {
             const token = tokens[i];
             i++;
             if (token === "(") {
-                check(i < tokens.length, i, "'(' at the end of the string");
-                check(tokens[i] in operations, i, "Unknown operation: " + tokens[i]);
-                const operation = operations[tokens[i]];
+                check(i < tokens.length, i, "No operation after '" + token + "'");
+                const Operation = operations[tokens[i]];
+                check(Operation !== undefined, i, "Unknown operation: '" + tokens[i] + "'");
                 const args = [];
                 i++;
-                while (i < tokens.length && tokens[i] !== ")") {
+                while (i < tokens.length && tokens[i] !== parentheses[token]) {
                     args.push(parseOperation());
                 }
-                check(i < tokens.length, i, "No ')' for " + operation.prototype.symbol);
                 check(
-                    operation.argsCount === args.length,
+                    tokens[i] === parentheses[token],
                     i,
-                    operation.argsCount + " arguments expected for '" + operation.prototype.symbol +
+                    "No '" + parentheses[token] + "' for " + Operation.prototype.symbol
+                );
+                check(
+                    Operation.argsCount === args.length,
+                    i,
+                    Operation.argsCount + " arguments expected for '" + Operation.prototype.symbol +
                     "', got " + args.length
                 );
                 i++;
-                return new operation(...args);
+                return new Operation(...args);
             } else {
                 if (token in symbols) {
                     return symbols[token];
                 } else {
                     const number = parseInt(token);
-                    check(number.toString() === token, i, token + " is not a valid token");
+                    check(number.toString() === token, i, "'" + token + "' is not a valid token");
                     return new Const(number);
                 }
             }
