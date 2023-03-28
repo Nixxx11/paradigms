@@ -9,7 +9,7 @@ Const.prototype.evaluate = function (...vars) {
 Const.prototype.diff = function (varName) {
     return zero;
 };
-Const.prototype.prefix = Const.prototype.toString = function () {
+Const.prototype.postfix = Const.prototype.prefix = Const.prototype.toString = function () {
     return this.number.toString();
 };
 
@@ -31,7 +31,7 @@ Variable.prototype.evaluate = function (...vars) {
 Variable.prototype.diff = function (varName) {
     return varName === this.name ? one : zero;
 };
-Variable.prototype.prefix = Variable.prototype.toString = function () {
+Variable.prototype.postfix = Variable.prototype.prefix = Variable.prototype.toString = function () {
     return this.name;
 };
 
@@ -48,6 +48,9 @@ const expressions = (function () {
     }
     AbstractOperation.prototype.prefix = function () {
         return "(" + this.symbol + " " + this.operands.map((expression) => expression.prefix()).join(" ") + ")";
+    }
+    AbstractOperation.prototype.postfix = function () {
+        return "(" + this.operands.map((expression) => expression.postfix()).join(" ") + " " + this.symbol + ")";
     }
 
     const operationsList = [];
@@ -138,6 +141,21 @@ const distances = (function () {
 const [Sumsq2, Sumsq3, Sumsq4, Sumsq5] = distances.sumSq;
 const [Distance2, Distance3, Distance4, Distance5] = distances.distance;
 
+const sumExpOperator = (...numbers) => numbers.reduce((sumExp, current) => sumExp + Math.exp(current), 0);
+const Sumexp = makeOperation(sumExpOperator, "sumexp",
+    function (varName) {
+        return diffFromCoefficients(varName, this.operands, this.operands.map((operand) => new Sumexp(operand)));
+    }
+);
+const LSE = makeOperation((...numbers) => Math.log(sumExpOperator(...numbers)), "lse",
+    function (varName) {
+        return new Divide(
+            diffFromCoefficients(varName, this.operands, this.operands.map((operand) => new Sumexp(operand))),
+            new Sumexp(...this.operands)
+        );
+    }
+);
+
 const parser = (function () {
     const symbols = Object.keys(Variable.names).reduce(
         (map, varName) => ({...map, [varName]: new Variable(varName)}),
@@ -162,7 +180,7 @@ const parser = (function () {
         }
     }
 
-    function parseSuffix(expression) {
+    function parse(expression) {
         const tokens = expression.split(" ").filter((token) => token.length > 0);
         const stack = [];
         tokens.forEach((token, i) => {
@@ -171,8 +189,14 @@ const parser = (function () {
             } else if (token in operations) {
                 const Operation = operations[token];
                 check(
+                    Operation.argsCount !== 0,
+                    i,
+                    "Used operation with unknown number of arguments: '" + Operation.prototype.symbol + "'"
+                )
+                check(
                     stack.length >= Operation.argsCount,
-                    i, "'" + Operation.prototype.symbol + "' does not have enough operands"
+                    i,
+                    "'" + Operation.prototype.symbol + "' does not have enough operands"
                 );
                 stack.push(new Operation(...stack.splice(-Operation.argsCount)));
             } else {
@@ -227,7 +251,7 @@ const parser = (function () {
                     "No '" + parentheses[token] + "' for " + Operation.prototype.symbol
                 );
                 check(
-                    Operation.argsCount === args.length,
+                    Operation.argsCount === 0 || Operation.argsCount === args.length,
                     i,
                     Operation.argsCount + " arguments expected for '" + Operation.prototype.symbol +
                     "', got " + args.length
@@ -250,7 +274,53 @@ const parser = (function () {
         return result;
     }
 
-    return {parseSuffix, parsePrefix, ParsingError};
+    function parsePostfix(expression) {
+        const tokens = splitWithParentheses(expression);
+        let i = tokens.length - 1;
+
+        function parseOperation() {
+            const token = tokens[i];
+            i--;
+            if (token === ")") {
+                check(i >= 0, i, "No operation before '" + token + "'");
+                const Operation = operations[tokens[i]];
+                check(Operation !== undefined, i, "Unknown operation: '" + tokens[i] + "'");
+                const args = [];
+                i--;
+                while (i >= 0 && tokens[i] !== parentheses[token]) {
+                    args.push(parseOperation());
+                }
+                check(
+                    tokens[i] === parentheses[token],
+                    i,
+                    "No '" + parentheses[token] + "' for " + Operation.prototype.symbol
+                );
+                check(
+                    Operation.argsCount === 0 || Operation.argsCount === args.length,
+                    i,
+                    Operation.argsCount + " arguments expected for '" + Operation.prototype.symbol +
+                    "', got " + args.length
+                );
+                i--;
+                return new Operation(...(args.reverse()));
+            } else {
+                if (token in symbols) {
+                    return symbols[token];
+                } else {
+                    const number = parseInt(token);
+                    check(number.toString() === token, i, "'" + token + "' is not a valid token");
+                    return new Const(number);
+                }
+            }
+        }
+
+        const result = parseOperation();
+        check(i === -1, i, "Excess tokens: " + tokens.slice(0, i + 1));
+        return result;
+    }
+
+    return {parse, parsePrefix, parsePostfix, ParsingError};
 })();
-const parse = parser.parseSuffix;
+const parse = parser.parse;
 const parsePrefix = parser.parsePrefix;
+const parsePostfix = parser.parsePostfix;
