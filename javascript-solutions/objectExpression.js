@@ -233,7 +233,7 @@ const parser = (function () {
         const tokens = splitWithParentheses(expression);
         let i = 0;
 
-        function parseOperation() {
+        function parseExpression() {
             const token = tokens[i];
             i++;
             if (token === "(") {
@@ -243,7 +243,7 @@ const parser = (function () {
                 const args = [];
                 i++;
                 while (i < tokens.length && tokens[i] !== parentheses[token]) {
-                    args.push(parseOperation());
+                    args.push(parseExpression());
                 }
                 check(
                     tokens[i] === parentheses[token],
@@ -269,7 +269,7 @@ const parser = (function () {
             }
         }
 
-        const result = parseOperation();
+        const result = parseExpression();
         check(i === tokens.length, i, "Excess tokens: " + tokens.slice(i));
         return result;
     }
@@ -278,7 +278,7 @@ const parser = (function () {
         const tokens = splitWithParentheses(expression);
         let i = tokens.length - 1;
 
-        function parseOperation() {
+        function parseExpression() {
             const token = tokens[i];
             i--;
             if (token === ")") {
@@ -288,7 +288,7 @@ const parser = (function () {
                 const args = [];
                 i--;
                 while (i >= 0 && tokens[i] !== parentheses[token]) {
-                    args.push(parseOperation());
+                    args.push(parseExpression());
                 }
                 check(
                     tokens[i] === parentheses[token],
@@ -314,7 +314,7 @@ const parser = (function () {
             }
         }
 
-        const result = parseOperation();
+        const result = parseExpression();
         check(i === -1, i, "Excess tokens: " + tokens.slice(0, i + 1));
         return result;
     }
