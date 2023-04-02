@@ -13,12 +13,14 @@ _*
 # Do not store tests
 /java/
 /javascript/
+/clojure/
 
 # Do not store idea project file
 /paradigms.iml
 
 # Do not store out
 /out/
+
 /java-solutions/expression/DoubleExpression.java
 /java-solutions/expression/Expression.java
 /java-solutions/expression/parser/TripleParser.java

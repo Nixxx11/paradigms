@@ -192,7 +192,7 @@ const parser = (function () {
                     Operation.argsCount !== 0,
                     i,
                     "Used operation with unknown number of arguments: '" + Operation.prototype.symbol + "'"
-                )
+                );
                 check(
                     stack.length >= Operation.argsCount,
                     i,
