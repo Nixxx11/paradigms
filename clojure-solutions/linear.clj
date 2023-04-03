@@ -66,4 +66,4 @@
 
 (defn m*v [m & vs] (apply-values-to-vector scalar m vs))
 
-(defn m*m [m & ms] (reduce #(transpose (mapv (partial m*v %1) (transpose %2))) m ms))
+(defn m*m [m & ms] (reduce #(mapv (partial m*v (transpose %2)) %1) m ms))
