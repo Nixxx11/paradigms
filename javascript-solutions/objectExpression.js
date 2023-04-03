@@ -205,16 +205,16 @@ const parser = (function () {
     }
 
 
-    const parentheses = new Set(["(", ")"]);
+    const brackets = new Set(["(", ")"]);
 
     function splitWithParentheses(string) {
         const result = [];
         for (let i = 0; i < string.length; i++) {
-            if (parentheses.has(string.charAt(i))) {
+            if (brackets.has(string.charAt(i))) {
                 result.push(string.charAt(i));
             } else if (string.charAt(i) !== " ") {
                 const from = i;
-                while (i + 1 < string.length && !parentheses.has(string.charAt(i + 1)) && string.charAt(i + 1) !== " ") {
+                while (i + 1 < string.length && !brackets.has(string.charAt(i + 1)) && string.charAt(i + 1) !== " ") {
                     i++;
                 }
                 result.push(string.substring(from, i + 1));
@@ -223,26 +223,27 @@ const parser = (function () {
         return result;
     }
 
-    function parseWithParentheses(tokens, openingParentheses, reverse) {
+    function parseWithBrackets(tokens, openingBrackets, reverse) {
         let i = 0;
         const position = reverse ? () => tokens.length - i : () => i;
 
         function parseExpression() {
             const token = tokens[i];
             i++;
-            if (token in openingParentheses) {
-                check(i < tokens.length, position(), "No operation after '" + token + "'");
+            if (token in openingBrackets) {
+                check(i < tokens.length, position(), "No tokens for '" + token + "'");
                 const Operation = operations.get(tokens[i]);
                 check(Operation !== undefined, position(), "Unknown operation: '" + tokens[i] + "'");
-                const args = [];
                 i++;
-                while (i < tokens.length && tokens[i] !== openingParentheses[token]) {
+                const closingBracket = openingBrackets[token];
+                const args = [];
+                while (i < tokens.length && tokens[i] !== closingBracket) {
                     args.push(parseExpression());
                 }
                 check(
-                    tokens[i] === openingParentheses[token],
+                    tokens[i] === closingBracket,
                     position(),
-                    "No '" + openingParentheses[token] + "' for " + Operation.prototype.symbol
+                    "No '" + closingBracket + "' for " + Operation.prototype.symbol
                 );
                 check(
                     Operation.argsCount === 0 || Operation.argsCount === args.length,
@@ -279,12 +280,12 @@ const parser = (function () {
 
     function parsePrefix(expression) {
         const tokens = splitWithParentheses(expression);
-        return parseWithParentheses(tokens, {"(": ")"}, false);
+        return parseWithBrackets(tokens, {"(": ")"}, false);
     }
 
     function parsePostfix(expression) {
         const tokens = splitWithParentheses(expression);
-        return parseWithParentheses(tokens.reverse(), {")": "("}, true);
+        return parseWithBrackets(tokens.reverse(), {")": "("}, true);
     }
 
     return {parse, parsePrefix, parsePostfix, ParsingError};
