@@ -138,6 +138,8 @@ const distances = (function () {
 
     return {sumSq, distance};
 })();
+// :NOTE: можно не использовать промежуточные distances.sumSq
+// [2,3,4,5].map(...)
 const [Sumsq2, Sumsq3, Sumsq4, Sumsq5] = distances.sumSq;
 const [Distance2, Distance3, Distance4, Distance5] = distances.distance;
 
@@ -157,6 +159,7 @@ const LSE = makeOperation((...numbers) => Math.log(sumExpOperator(...numbers)), 
 );
 
 const parser = (function () {
+    // :NOTE: можно сделать new Map(Variable.names.map(...)), так будет проще и читаемее
     const symbols = Object.keys(Variable.names).reduce(
         (map, varName) => ({...map, [varName]: new Variable(varName)}),
         {}
@@ -263,6 +266,7 @@ const parser = (function () {
                     return symbols[token];
                 } else {
                     const number = parseInt(token);
+                    // :NOTE: нужно сначала сделать проверку, а потом парсить; для проверки есть стандартная функция
                     check(number.toString() === token, i, "'" + token + "' is not a valid token");
                     return new Const(number);
                 }
@@ -274,6 +278,7 @@ const parser = (function () {
         return result;
     }
 
+    // :NOTE: нужно объединить с parsePrefix и идти с 0, а не с конца
     function parsePostfix(expression) {
         const tokens = splitWithParentheses(expression);
         let i = tokens.length - 1;
