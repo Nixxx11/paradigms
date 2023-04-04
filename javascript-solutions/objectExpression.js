@@ -257,14 +257,12 @@ const parser = (function () {
                 if (symbols.has(token)) {
                     return symbols.get(token);
                 } else {
-                    const number = parseInt(token);
-                    // :NOTE: нужно сначала сделать проверку, а потом парсить; для проверки есть стандартная функция
                     check(
-                        number.toString() === token,
+                        !isNaN(token),
                         position(),
                         "'" + token + "' is not a valid token"
                     );
-                    return new Const(number);
+                    return new Const(parseInt(token));
                 }
             }
         }
