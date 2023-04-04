@@ -153,6 +153,11 @@ const LSE = makeOperation((...numbers) => Math.log(sumExpOperator(...numbers)), 
 );
 
 const parser = (function () {
+    // Первая проверка:
+    // :NOTE: можно без new Map
+    // Вторая проверка:
+    // :NOTE: можно сделать new Map(Variable.names.map(...)), так будет проще и читаемее
+    // :(
     const symbols = new Map(Object.keys(Variable.names).map(
         (varName) => [varName, new Variable(varName)]
     ));
