@@ -158,6 +158,7 @@ const parser = (function () {
     // Вторая проверка:
     // :NOTE: можно сделать new Map(Variable.names.map(...)), так будет проще и читаемее
     // :(
+    // справедливо
     const symbols = new Map(Object.keys(Variable.names).map(
         (varName) => [varName, new Variable(varName)]
     ));
@@ -213,6 +214,8 @@ const parser = (function () {
     const brackets = new Set(["(", ")"]);
 
     function splitWithParentheses(string) {
+        // :NOTE: возьми стандартный split и не мучайся
+        // скорее всего такой регулярки хватит /([\(\)\s])/
         const result = [];
         for (let i = 0; i < string.length; i++) {
             if (brackets.has(string.charAt(i))) {
@@ -296,3 +299,16 @@ const parser = (function () {
 const parse = parser.parse;
 const parsePrefix = parser.parsePrefix;
 const parsePostfix = parser.parsePostfix;
+
+// :NOTE: Empty input              : org.graalvm.polyglot.PolyglotException: ParsingError: Token -1: 'undefined' is not a valid token
+// undefined в выражении нет, еще и -1 индекс
+
+// :NOTE: Missing )                : org.graalvm.polyglot.PolyglotException: ParsingError: Token 7: '*' is not a valid token
+// вполне себе валидный токен
+
+// :NOTE: Excessive info           : org.graalvm.polyglot.PolyglotException: ParsingError: Token 5: (,x,y,+,)
+// ничего не поняла
+
+// :NOTE: Empty op                 : org.graalvm.polyglot.PolyglotException: ParsingError: Token 1: Unknown operation: '('
+// понятно, что скобки это специальные символы, а не операции
+// а что делать с этим пользователю непонятно
