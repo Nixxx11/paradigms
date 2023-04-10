@@ -211,27 +211,12 @@ const parser = (function () {
     }
 
 
-    const brackets = new Set(["(", ")"]);
-
-    function splitWithParentheses(string) {
-        // :NOTE: возьми стандартный split и не мучайся
-        // скорее всего такой регулярки хватит /([\(\)\s])/
-        const result = [];
-        for (let i = 0; i < string.length; i++) {
-            if (brackets.has(string.charAt(i))) {
-                result.push(string.charAt(i));
-            } else if (string.charAt(i) !== " ") {
-                const from = i;
-                while (i + 1 < string.length && !brackets.has(string.charAt(i + 1)) && string.charAt(i + 1) !== " ") {
-                    i++;
-                }
-                result.push(string.substring(from, i + 1));
-            }
+    function parseWithBrackets(expression, openingBrackets, reverse) {
+        check(expression.length > 0, 0, "Empty input string");
+        let tokens = expression.split(/([()]|\s+)/).filter((string) => string.length !== 0 && !/\s+/.test(string));
+        if (reverse) {
+            tokens = tokens.reverse();
         }
-        return result;
-    }
-
-    function parseWithBrackets(tokens, openingBrackets, reverse) {
         let i = 0;
         const position = reverse ? () => tokens.length - i : () => i;
 
@@ -241,7 +226,11 @@ const parser = (function () {
             if (token in openingBrackets) {
                 check(i < tokens.length, position(), "No tokens for '" + token + "'");
                 const Operation = operations.get(tokens[i]);
-                check(Operation !== undefined, position(), "Unknown operation: '" + tokens[i] + "'");
+                check(
+                    Operation !== undefined,
+                    position(),
+                    "Expected an operation, got '" + tokens[i] + "'"
+                );
                 i++;
                 const closingBracket = openingBrackets[token];
                 const args = [];
@@ -251,7 +240,7 @@ const parser = (function () {
                 check(
                     tokens[i] === closingBracket,
                     position(),
-                    "No '" + closingBracket + "' for " + Operation.prototype.symbol
+                    "No " + closingBracket + " for '" + Operation.prototype.symbol + "'"
                 );
                 check(
                     Operation.argsCount === 0 || Operation.argsCount === args.length,
@@ -268,7 +257,9 @@ const parser = (function () {
                     check(
                         !isNaN(token),
                         position(),
-                        "'" + token + "' is not a valid token"
+                        operations.has(token) ?
+                            "No " + Object.keys(openingBrackets) + " for '" + token + "'"
+                            : "'" + token + "' is not a valid token"
                     );
                     return new Const(parseInt(token));
                 }
@@ -279,36 +270,17 @@ const parser = (function () {
         check(
             i === tokens.length,
             position(),
-            "Excess tokens: " + reverse ? tokens.slice(i).reverse() : tokens.slice(i)
+            "Excess tokens: " + (reverse ? tokens.slice(i).reverse() : tokens.slice(i))
         );
         return result;
     }
 
-    function parsePrefix(expression) {
-        const tokens = splitWithParentheses(expression);
-        return parseWithBrackets(tokens, {"(": ")"}, false);
-    }
+    const parsePrefix = (expression) => parseWithBrackets(expression, {"(": ")"}, false);
 
-    function parsePostfix(expression) {
-        const tokens = splitWithParentheses(expression);
-        return parseWithBrackets(tokens.reverse(), {")": "("}, true);
-    }
+    const parsePostfix = (expression) => parseWithBrackets(expression, {")": "("}, true);
 
     return {parse, parsePrefix, parsePostfix, ParsingError};
 })();
 const parse = parser.parse;
 const parsePrefix = parser.parsePrefix;
 const parsePostfix = parser.parsePostfix;
-
-// :NOTE: Empty input              : org.graalvm.polyglot.PolyglotException: ParsingError: Token -1: 'undefined' is not a valid token
-// undefined в выражении нет, еще и -1 индекс
-
-// :NOTE: Missing )                : org.graalvm.polyglot.PolyglotException: ParsingError: Token 7: '*' is not a valid token
-// вполне себе валидный токен
-
-// :NOTE: Excessive info           : org.graalvm.polyglot.PolyglotException: ParsingError: Token 5: (,x,y,+,)
-// ничего не поняла
-
-// :NOTE: Empty op                 : org.graalvm.polyglot.PolyglotException: ParsingError: Token 1: Unknown operation: '('
-// понятно, что скобки это специальные символы, а не операции
-// а что делать с этим пользователю непонятно
