@@ -1,12 +1,15 @@
 (defn apply-vectors-to-vector [f v vs] (apply mapv f v vs))
 (defn apply-values-to-vector [f v args] (apply mapv f v (mapv repeat args)))
 
-(defn is-vector? [v] (and (vector? v) (every? number? v)))
-(defn size-equals? [num v] (= (count v) num))
-(defn equal-sized? [& colls] (every? (partial size-equals? (count (first colls))) colls))
-(defn equal-sized-vectors? [& vs] (and
-                                    (every? is-vector? vs)
-                                    (apply equal-sized? vs)))
+(def is-scalar? number?)
+(defn is-vector? [v] (and (vector? v) (every? is-scalar? v)))
+(defn size-equals? [num v]
+  {:pre [(vector? v)]}
+  (= (count v) num))
+(defn equal-sized? [& vs]
+  {:pre [(every? vector? vs)]}
+  (every? (partial size-equals? (count (first vs))) vs))
+(defn equal-sized-vectors? [& vs] (and (every? is-vector? vs) (apply equal-sized? vs)))
 
 (defn v+ [v & vs]
   {:pre [(apply equal-sized-vectors? v vs)]}
@@ -21,21 +24,19 @@
   {:pre [(apply equal-sized-vectors? v vs)]}
   (apply-vectors-to-vector / v vs))
 (defn v*s [v & ss]
-  {:pre [(is-vector? v) (every? number? ss)]}
+  {:pre [(is-vector? v) (every? is-scalar? ss)]}
   (apply-values-to-vector * v ss))
 
 (defn scalar [v & vs]
   {:pre [(apply equal-sized-vectors? v vs)]}
-  (reduce + (apply v* v vs)))
+  (apply + (apply v* v vs)))
 
-(defn element-mul-diff [v1 v2 i1 i2] (- (* (v1 i1) (v2 i2)) (* (v1 i2) (v2 i1))))
 (defn vect [v & vs]
   {:pre [(apply equal-sized-vectors? v vs) (size-equals? 3 v)]}
   (reduce
-    #(vector
-       (element-mul-diff %1 %2 1 2)
-       (element-mul-diff %1 %2 2 0)
-       (element-mul-diff %1 %2 0 1))
+    #(mapv
+       (fn [[i1 i2]] (- (* (%1 i1) (%2 i2)) (* (%1 i2) (%2 i1))))
+       [[1 2] [2 0] [0 1]])
     v vs))
 ;;(v1[1]*v2[2] - v1[2]*v2[1], v1[2]*v2[0] - v1[0]*v2[2], v1[0]*v2[1] - v1[1]*v2[0])
 
@@ -62,8 +63,17 @@
   {:pre [(is-matrix? m)]}
   (apply mapv vector m))
 
-(defn m*s [m & ss] (apply-values-to-vector v*s m ss))
+(defn m*s [m & ss]
+  {:pre [(is-matrix? m) (every? is-scalar? ss)]}
+  (apply-values-to-vector v*s m ss))
 
-(defn m*v [m & vs] (apply-values-to-vector scalar m vs))
+(defn m*v [m v]
+  {:pre [(is-matrix? m) (is-vector? v) (equal-sized? (first m) v)]}
+  (mapv (partial scalar v) m))
 
-(defn m*m [m & ms] (reduce #(mapv (partial m*v (transpose %2)) %1) m ms))
+(defn m*m [m & ms]
+  {:pre [(is-matrix? m) (every? is-matrix? ms)
+         (apply #(every?
+                   (fn [index] (equal-sized? (first (nth %& index)) (nth %& (inc index))))
+                   (range (dec (count %&)))) m ms)]}
+  (reduce #(mapv (partial m*v (transpose %2)) %1) m ms))
