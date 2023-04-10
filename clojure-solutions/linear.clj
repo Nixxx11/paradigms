@@ -90,5 +90,5 @@
          (apply #(every?
                    (fn [index] (equal-sized? (first (nth %& index)) (nth %& (inc index))))
                    (range (dec (count %&)))) m ms)]
-   :post [(is-matrix? %) (equal-sized? m %) (equal-sized? (first (last (apply vector m ms))) (first %))]}
+   :post [(is-matrix? %) (equal-sized? m %) (equal-sized? (first (last (cons m ms))) (first %))]}
   (reduce #(mapv (partial m*v (transpose %2)) %1) m ms))
