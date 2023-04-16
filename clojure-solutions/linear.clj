@@ -87,18 +87,17 @@
 
 (defn m*m [m & ms]
   {:pre  [(is-matrix? m) (every? is-matrix? ms)
-          ((fn [previous remaining] (if (empty? remaining)
-                                      true
-                                      (if-not (equal-sized? (first previous) (first remaining))
-                                        false
-                                        (recur (first remaining) (rest remaining)))))
+          ((fn [previous remaining] (cond
+                                      (empty? remaining) true
+                                      (not (equal-sized? (first previous) (first remaining))) false
+                                      :else (recur (first remaining) (rest remaining))))
            m ms)]
    :post [(is-matrix? %) (equal-sized? m %) (equal-sized? (first (last (cons m ms))) (first %))]}
   (reduce #(mapv (partial m*v (transpose %2)) %1) m ms))
 
-(defn apply-recursive [f & ts] (if
-                                 (every? is-scalar? ts) (apply f ts)
-                                                        (apply mapv (partial apply-recursive f) ts)))
+(defn apply-recursive [f & ts] (if (every? is-scalar? ts)
+                                 (apply f ts)
+                                 (apply mapv (partial apply-recursive f) ts)))
 (defn equal-sized-tensors? [& ts] (or
                                     (every? is-scalar? ts)
                                     (and
