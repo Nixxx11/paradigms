@@ -1,6 +1,7 @@
 (def constant constantly)
 (defn variable [var-name] (fn [vars] (vars var-name)))
-(defn make-operation [f] (fn [& operands] (fn [vars] (apply f (mapv #(% vars) operands)))))
+(defn call [& args] (fn [f] (apply f args)))
+(defn make-operation [f] (fn [& operands] (fn [vars] (apply f (map (call vars) operands)))))
 
 (def add (make-operation +))
 (def subtract (make-operation -))

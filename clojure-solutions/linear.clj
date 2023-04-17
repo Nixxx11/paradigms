@@ -1,6 +1,6 @@
 (def is-scalar? number?)
 (defn is-vector? [v] (and (vector? v) (every? is-scalar? v)))
-(defn equal-sized? [& vs] (apply == (mapv count vs)))
+(defn equal-sized? [& vs] (apply == (map count vs)))
 (defn equal-sized-vectors? [& vs] (and (every? is-vector? vs) (apply equal-sized? vs)))
 
 (defn make-vector-function [scalar-function] (fn [v & vs]
@@ -16,7 +16,7 @@
 (defn v*s [v & ss]
   {:pre  [(is-vector? v) (every? is-scalar? ss)]
    :post [(equal-sized-vectors? v %)]}
-  (apply mapv * v (mapv repeat ss)))
+  (apply mapv * v (map repeat ss)))
 
 (defn scalar [v & vs]
   {:pre  [(apply equal-sized-vectors? v vs)]
@@ -36,7 +36,7 @@
 (defn equal-sized-matrices? [& ms] (and
                                      (every? is-matrix? ms)
                                      (apply equal-sized? ms)
-                                     (apply equal-sized? (mapv first ms))))
+                                     (apply equal-sized? (map first ms))))
 (defn m-width==v-height? [m v] (equal-sized? (first m) v))
 
 (defn make-matrix-function [vector-function] (fn [m & ms]
@@ -57,7 +57,7 @@
 (defn m*s [m & ss]
   {:pre  [(is-matrix? m) (every? is-scalar? ss)]
    :post [(equal-sized-matrices? m %)]}
-  (apply mapv v*s m (mapv repeat ss)))
+  (apply mapv v*s m (map repeat ss)))
 
 (defn m*v [m v]
   {:pre  [(is-matrix? m) (is-vector? v) (m-width==v-height? m v)]
