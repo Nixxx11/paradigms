@@ -2,16 +2,14 @@
 (defn variable [var-name] (fn [vars] (vars var-name)))
 (defn make-operation [f] (fn [& operands] (fn [vars] (apply f (mapv #(% vars) operands)))))
 
-(defn zero-safe-div [a & args] (cond
-                                 (and (empty? args) (zero? a)) ##Inf
-                                 (not-any? zero? args) (apply / a args)
-                                 :else ##Inf))
 (def add (make-operation +))
 (def subtract (make-operation -))
 (def multiply (make-operation *))
-(def divide (make-operation zero-safe-div))
+(def divide (make-operation #(cond
+                               (and (empty? %&) (zero? %)) ##Inf
+                               (not-any? zero? %&) (apply / % %&)
+                               :else ##Inf)))
 (def negate subtract)
-
 
 (def operation-map {'+      add,
                     '-      subtract,

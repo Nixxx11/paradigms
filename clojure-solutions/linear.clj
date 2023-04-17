@@ -3,12 +3,9 @@
 
 (def is-scalar? number?)
 (defn is-vector? [v] (and (vector? v) (every? is-scalar? v)))
-(defn size-equals? [num v]
-  {:pre [(number? num) (vector? v)]}
-  (= (count v) num))
 (defn equal-sized? [& vs]
   {:pre [(every? vector? vs)]}
-  (every? (partial size-equals? (count (first vs))) vs))
+  (apply == (mapv count vs)))
 (defn equal-sized-vectors? [& vs] (and (every? is-vector? vs) (apply equal-sized? vs)))
 
 (defn v+ [v & vs]
@@ -38,20 +35,22 @@
   (apply + (apply v* v vs)))
 
 (defn vect [v & vs]
-  {:pre  [(apply equal-sized-vectors? v vs) (size-equals? 3 v)]
-   :post [(is-vector? %) (size-equals? 3 %)]}
+  {:pre  [(apply equal-sized-vectors? v vs) (= (count v) 3)]
+   :post [(is-vector? %) (= (count %) 3)]}
   (reduce
     #(mapv
        (fn [[i1 i2]] (- (* (%1 i1) (%2 i2)) (* (%1 i2) (%2 i1))))
        [[1 2] [2 0] [0 1]])
     v vs))
-;;(v1[1]*v2[2] - v1[2]*v2[1], v1[2]*v2[0] - v1[0]*v2[2], v1[0]*v2[1] - v1[1]*v2[0])
 
 (defn is-matrix? [m] (and (vector? m) (apply equal-sized-vectors? m)))
 (defn equal-sized-matrices? [& ms] (and
                                      (every? is-matrix? ms)
                                      (apply equal-sized? ms)
                                      (apply equal-sized? (mapv first ms))))
+(defn m-width==v-height? [m v]
+  {:pre [(is-matrix? m) (vector? v)]}
+  (equal-sized? (first m) v))
 
 (defn m+ [m & ms]
   {:pre  [(apply equal-sized-matrices? m ms)]
@@ -72,7 +71,7 @@
 
 (defn transpose [m]
   {:pre  [(is-matrix? m)]
-   :post [(is-matrix? m) (equal-sized? (first m) %)]}
+   :post [(is-matrix? m) (m-width==v-height? m %)]}
   (apply mapv vector m))
 
 (defn m*s [m & ss]
@@ -81,7 +80,7 @@
   (apply-values-to-vector v*s m ss))
 
 (defn m*v [m v]
-  {:pre  [(is-matrix? m) (is-vector? v) (equal-sized? (first m) v)]
+  {:pre  [(is-matrix? m) (is-vector? v) (m-width==v-height? m v)]
    :post [(is-vector? %) (equal-sized? m %)]}
   (mapv (partial scalar v) m))
 
@@ -89,7 +88,7 @@
   {:pre  [(is-matrix? m) (every? is-matrix? ms)
           ((fn [previous remaining] (cond
                                       (empty? remaining) true
-                                      (not (equal-sized? (first previous) (first remaining))) false
+                                      (not (m-width==v-height? previous (first remaining))) false
                                       :else (recur (first remaining) (rest remaining))))
            m ms)]
    :post [(is-matrix? %) (equal-sized? m %) (equal-sized? (first (last (cons m ms))) (first %))]}
