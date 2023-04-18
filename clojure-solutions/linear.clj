@@ -14,11 +14,10 @@
 (def v* (make-vector-function *))
 (def vd (make-vector-function /))
 
-; :NOTE: square
 (defn v*s [v & ss]
   {:pre  [(is-vector? v) (every? is-scalar? ss)]
    :post [(equal-sized-vectors? v %)]}
-  (apply mapv * v (map repeat ss)))
+  (mapv (partial * (apply * ss)) v))
 
 (defn scalar [v & vs]
   {:pre  [(apply equal-sized-vectors? v vs)]
@@ -54,14 +53,14 @@
 
 (defn transpose [m]
   {:pre  [(is-matrix? m)]
-   :post [(is-matrix? m) (m-width==v-height? m %)]} ; :NOTE: ??
+   :post [(is-matrix? m) (m-width==v-height? m %) (or (empty? (first m)) (m-width==v-height? % m))]}
   (apply mapv vector m))
 
-; :NOTE: square
+(defn s*v [s v] (v*s v s))
 (defn m*s [m & ss]
   {:pre  [(is-matrix? m) (every? is-scalar? ss)]
    :post [(equal-sized-matrices? m %)]}
-  (apply mapv v*s m (map repeat ss)))
+  (mapv (partial s*v (apply * ss)) m))
 
 (defn m*v [m v]
   {:pre  [(is-matrix? m) (is-vector? v) (m-width==v-height? m v)]
