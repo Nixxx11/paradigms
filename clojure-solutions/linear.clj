@@ -3,16 +3,18 @@
 (defn equal-sized? [& vs] (apply == (map count vs)))
 (defn equal-sized-vectors? [& vs] (and (every? is-vector? vs) (apply equal-sized? vs)))
 
-(defn make-vector-function [scalar-function] (fn [v & vs]
-                                               {:pre  [(apply equal-sized-vectors? v vs)]
-                                                :post [(equal-sized-vectors? v %)]}
-                                               (apply mapv scalar-function v vs)))
+(defn make-vector-function [scalar-function]
+  (fn [v & vs]
+    {:pre  [(apply equal-sized-vectors? v vs)]
+     :post [(equal-sized-vectors? v %)]}
+    (apply mapv scalar-function v vs)))
 
 (def v+ (make-vector-function +))
 (def v- (make-vector-function -))
 (def v* (make-vector-function *))
 (def vd (make-vector-function /))
 
+; :NOTE: square
 (defn v*s [v & ss]
   {:pre  [(is-vector? v) (every? is-scalar? ss)]
    :post [(equal-sized-vectors? v %)]}
@@ -39,10 +41,11 @@
                                      (apply equal-sized? (map first ms))))
 (defn m-width==v-height? [m v] (equal-sized? (first m) v))
 
-(defn make-matrix-function [vector-function] (fn [m & ms]
-                                               {:pre  [(apply equal-sized-matrices? m ms)]
-                                                :post [(equal-sized-matrices? m %)]}
-                                               (apply mapv vector-function m ms)))
+(defn make-matrix-function [vector-function]
+  (fn [m & ms]
+    {:pre  [(apply equal-sized-matrices? m ms)]
+     :post [(equal-sized-matrices? m %)]}
+    (apply mapv vector-function m ms)))
 
 (def m+ (make-matrix-function v+))
 (def m- (make-matrix-function v-))
@@ -51,9 +54,10 @@
 
 (defn transpose [m]
   {:pre  [(is-matrix? m)]
-   :post [(is-matrix? m) (m-width==v-height? m %)]}
+   :post [(is-matrix? m) (m-width==v-height? m %)]} ; :NOTE: ??
   (apply mapv vector m))
 
+; :NOTE: square
 (defn m*s [m & ss]
   {:pre  [(is-matrix? m) (every? is-scalar? ss)]
    :post [(equal-sized-matrices? m %)]}
@@ -74,12 +78,14 @@
    :post [(is-matrix? %) (equal-sized? m %) (equal-sized? (first (last (cons m ms))) (first %))]}
   (reduce #(mapv (partial m*v (transpose %2)) %1) m ms))
 
-(defn equal-sized-tensors? [& ts] (or
-                                    (every? is-scalar? ts)
-                                    (and
-                                      (every? vector? ts)
-                                      (apply equal-sized? ts)
-                                      (apply equal-sized-tensors? (apply concat ts)))))
+(defn equal-sized-tensors? [& ts]
+  (or
+    (every? is-scalar? ts)
+    (and
+      (every? vector? ts)
+      (apply equal-sized? ts)
+      (apply equal-sized-tensors? (apply concat ts)))))
+
 (defn make-tensor-function [scalar-function]
   (fn f [t & ts]
     {:pre  [(apply equal-sized-tensors? t ts)]
