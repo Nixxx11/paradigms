@@ -6,17 +6,24 @@
 (def add (make-operation +))
 (def subtract (make-operation -))
 (def multiply (make-operation *))
-(def divide (make-operation #(cond
-                               (and (empty? %&) (zero? %)) ##Inf
-                               (not-any? zero? %&) (apply / % %&)
-                               :else ##Inf)))
+(defn fixed-div
+  ([x] (/ 1.0 x))
+  ([x & args] (/ (double x) (apply * args))))
+(def divide (make-operation fixed-div))
 (def negate subtract)
+
+(defn sumexp-operator [& args] (apply + (map #(Math/exp %) args)))
+(def sumexp (make-operation sumexp-operator))
+(defn lse-operator [& args] (Math/log (apply sumexp-operator args)))
+(def lse (make-operation lse-operator))
 
 (def operation-map {'+      add,
                     '-      subtract,
                     '*      multiply,
                     '/      divide,
-                    'negate negate})
+                    'negate negate,
+                    'sumexp sumexp,
+                    'lse    lse})
 
 (defn parse [expr] (cond
                      (list? expr) (apply (operation-map (first expr)) (map parse (rest expr)))
