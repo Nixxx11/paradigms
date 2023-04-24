@@ -26,18 +26,24 @@
                    'lse    lse})
 
 (load-file "proto.clj")
-(defclass
-  Variable
-  _
-  [name]
-  [toString [] (__name this)]
-  [evaluate [vars] (vars (__name this))])
+
+(declare zero)
 (defclass
   Constant
   _
   [num]
   [toString [] (str (__num this))]
-  [evaluate [vars] (__num this)])
+  [evaluate [vars] (__num this)]
+  [diff [var-name] zero])
+(def zero (Constant 0))
+(def one (Constant 1))
+(defclass
+  Variable
+  _
+  [name]
+  [toString [] (__name this)]
+  [evaluate [vars] (vars (__name this))]
+  [diff [var-name] (if (= var-name (__name this)) one zero)])
 
 (defmethods getSymbol, calculate)
 (defclass
@@ -48,18 +54,52 @@
   [evaluate [vars] (_calculate this (map #(_evaluate % vars) (__operands this)))])
 
 (def object-map {})
-(defn make-operation-class [func symb]
-  (let [OperationPrototype (assoc AbstractOperation_proto :getSymbol (fn [this] symb)
-                                                          :calculate (fn [this nums] (apply func nums)))
+(defn make-operation-class [func symb diff]
+  (let [OperationPrototype (assoc AbstractOperation_proto
+                             :getSymbol (fn [this] symb)
+                             :calculate (fn [this nums] (apply func nums))
+                             :diff (fn [this var-name] (apply diff var-name (__operands this))))
         OperationConstructor (constructor (fn [this & operands] (assoc this :operands operands)) OperationPrototype)]
     (def object-map (assoc object-map (symbol symb) OperationConstructor))
     OperationConstructor))
 
-(def Add (make-operation-class + "+"))
-(def Subtract (make-operation-class - "-"))
-(def Multiply (make-operation-class * "*"))
-(def Divide (make-operation-class fixed-div "/"))
-(def Negate (make-operation-class - "negate"))
+(declare Add, Subtract, Multiply, Divide, Negate)
+(defn diff-from-coefficients [var-name operands coefficients]
+  (apply Add
+         (map
+           (fn [operand coefficient] (Multiply coefficient (_diff operand var-name)))
+           operands coefficients)))
+
+(def Add
+  (make-operation-class
+    + "+"
+    (fn [var-name & operands]
+      (apply Add (map #(_diff % var-name) operands)))))
+(def Subtract
+  (make-operation-class
+    - "-"
+    (fn [var-name & operands]
+      (apply Subtract (map #(_diff % var-name) operands)))))
+(def Multiply
+  (make-operation-class
+    * "*"
+    (fn [var-name & operands]
+      (apply Multiply (diff-from-coefficients var-name operands (map Divide operands)) operands))))
+(def Divide
+  (make-operation-class
+    fixed-div "/"
+    (fn divide-diff
+      ([var-name divisor] (divide-diff var-name one divisor))
+      ([var-name dividend divisor] (diff-from-coefficients
+                                     var-name
+                                     [dividend divisor]
+                                     [(Divide one divisor) (Negate (Divide dividend (Multiply divisor divisor)))]))
+      ([var-name dividend divisor & divisors] (divide-diff var-name dividend (apply Multiply divisor divisors))))))
+(def Negate
+  (make-operation-class
+    - "negate"
+    (fn [var-name & operands]
+      (apply Negate (map #(_diff % var-name) operands)))))
 
 (defn make-parser [operations-map const-func var-func]
   (fn parse [expr] (cond
@@ -73,3 +113,4 @@
 
 (def toString _toString)
 (def evaluate _evaluate)
+(def diff _diff)
