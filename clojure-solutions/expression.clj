@@ -4,8 +4,10 @@
 (defn make-operation [f] (fn [& operands] (fn [vars] (apply f (map (call vars) operands)))))
 
 (def add (make-operation +))
+;; :NOTE: не принимает 0 аргументов
 (def subtract (make-operation -))
 (def multiply (make-operation *))
+;; :NOTE: не принимает 0 аргументов
 (defn fixed-div
   ([x] (/ 1.0 x))
   ([x & args] (/ (double x) (apply * args))))
@@ -74,6 +76,8 @@
 (def Add
   (make-operation-class
     + "+"
+    ;; :NOTE: хочется вынести получение производных от операндов
+    ;; либо объединить производные Add Subtract Negate в одну вспомогательную
     (fn [var-name & operands]
       (apply Add (map #(_diff % var-name) operands)))))
 (def Subtract
