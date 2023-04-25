@@ -4,15 +4,17 @@
 (defn make-operation [f] (fn [& operands] (fn [vars] (apply f (map (call vars) operands)))))
 
 (def add (make-operation +))
-;; :NOTE: не принимает 0 аргументов
-(def subtract (make-operation -))
+(defn fixed-sub
+  ([] 0)
+  ([& args] (apply - args)))
+(def subtract (make-operation fixed-sub))
 (def multiply (make-operation *))
-;; :NOTE: не принимает 0 аргументов
 (defn fixed-div
+  ([] 1)
   ([x] (/ 1.0 x))
   ([x & args] (/ (double x) (apply * args))))
 (def divide (make-operation fixed-div))
-(def negate subtract)
+(def negate (make-operation -))
 
 (defn sumexp-operator [& args] (apply + (map #(Math/exp %) args)))
 (def sumexp (make-operation sumexp-operator))
@@ -34,9 +36,9 @@
   Constant
   _
   [num]
-  [toString [] (str (__num this))]
-  [evaluate [vars] (__num this)]
-  [diff [var-name] zero])
+  (toString [] (str (__num this)))
+  (evaluate [vars] (__num this))
+  (diff [var-name] zero))
 (def zero (Constant 0))
 (def one (Constant 1))
 
@@ -44,83 +46,86 @@
   Variable
   _
   [name]
-  [toString [] (__name this)]
-  [evaluate [vars] (vars (__name this))]
-  [diff [var-name] (if (= var-name (__name this)) one zero)])
+  (toString [] (__name this))
+  (evaluate [vars] (vars (__name this)))
+  (diff [var-name] (if (= var-name (__name this)) one zero)))
 
-(defmethods getSymbol, getFunction)
+(defmethods getSymbol, getFunction, getDiff)
 (defclass
   AbstractOperation
   _
   [operands]
-  [toString [] (str "(" (_getSymbol this) " " (clojure.string/join " " (map _toString (__operands this))) ")")]
-  [evaluate [vars] (apply (_getFunction this) (map #(_evaluate % vars) (__operands this)))])
+  (toString [] (str "(" (_getSymbol this) " " (clojure.string/join " " (map _toString (__operands this))) ")"))
+  (evaluate [vars] (apply (_getFunction this) (map #(_evaluate % vars) (__operands this))))
+  (diff [var-name] (let [operands (__operands this)]
+                     ((_getDiff this) operands (map #(_diff % var-name) operands)))))
 
 (def object-map {})
 (defn make-operation-class [func symb diff]
   (let [OperationPrototype (assoc AbstractOperation_proto
                              :getSymbol (fn [this] symb)
                              :getFunction (fn [this] func)
-                             :diff (fn [this var-name] (apply diff var-name (__operands this))))
+                             :getDiff (fn [this] diff))
         OperationConstructor (constructor (fn [this & operands] (assoc this :operands operands)) OperationPrototype)]
     (def object-map (assoc object-map (symbol symb) OperationConstructor))
     OperationConstructor))
 
 (declare Add, Subtract, Multiply, Divide, Negate)
-(defn diff-from-coefficients [var-name operands coefficients]
-  (apply Add
-         (map
-           (fn [operand coefficient] (Multiply coefficient (_diff operand var-name)))
-           operands coefficients)))
+(defn add-mul [coll1 coll2]
+  (apply Add (map Multiply coll1 coll2)))
 
 (def Add
   (make-operation-class
     + "+"
-    ;; :NOTE: хочется вынести получение производных от операндов
-    ;; либо объединить производные Add Subtract Negate в одну вспомогательную
-    (fn [var-name & operands]
-      (apply Add (map #(_diff % var-name) operands)))))
+    (fn [operands diffs]
+      (apply Add diffs))))
 (def Subtract
   (make-operation-class
-    - "-"
-    (fn [var-name & operands]
-      (apply Subtract (map #(_diff % var-name) operands)))))
+    fixed-sub "-"
+    (fn [operands diffs]
+      (apply Subtract diffs))))
 (def Multiply
   (make-operation-class
     * "*"
-    (fn [var-name & operands]
-      (apply Multiply (diff-from-coefficients var-name operands (map Divide operands)) operands))))
+    (defn multiply-diff [operands diffs]
+      (apply Multiply (add-mul diffs (map Divide operands)) operands))))
 (def Divide
   (make-operation-class
     fixed-div "/"
-    (fn divide-diff
-      ([var-name divisor] (divide-diff var-name one divisor))
-      ([var-name dividend divisor] (diff-from-coefficients
-                                     var-name
-                                     [dividend divisor]
-                                     [(Divide one divisor) (Negate (Divide dividend (Multiply divisor divisor)))]))
-      ([var-name dividend divisor & divisors] (divide-diff var-name dividend (apply Multiply divisor divisors))))))
+    (fn divide-diff [operands diffs]
+      (cond (= (count operands) 0) (zero)
+            (= (count operands) 1) (divide-diff
+                                     [one (first operands)]
+                                     [zero (first diffs)])
+            (= (count operands) 2) (let [[dividend divisor] operands]
+                                     (add-mul
+                                       [(Divide divisor) (Negate (Divide dividend (Multiply divisor divisor)))]
+                                       diffs))
+            :else (divide-diff
+                    [(first operands) (apply Multiply (rest operands))]
+                    [(first diffs) (multiply-diff (rest operands) (rest diffs))])))))
+
 (def Negate
   (make-operation-class
     - "negate"
-    (fn [var-name & operands]
-      (apply Negate (map #(_diff % var-name) operands)))))
+    (fn [operands diffs]
+      (apply Negate diffs))))
 
 (defn meansq-operator [& nums] (/ (apply + (map #(* % %) nums)) (count nums)))
 (defn rms-operator [& nums] (Math/sqrt (apply meansq-operator nums)))
 (def Meansq
   (make-operation-class
     meansq-operator "meansq"
-    (fn [var-name & operands]
+    (fn [operands diffs]
       (Multiply
         (Constant (fixed-div 2 (count operands)))
-        (diff-from-coefficients var-name operands operands)))))
+        (add-mul operands diffs)))))
 (def RMS
   (make-operation-class
     rms-operator "rms"
-    (fn [var-name & operands]
+    (fn [operands diffs]
       (Divide
-        (diff-from-coefficients var-name operands operands)
+        (add-mul operands diffs)
         (apply RMS operands)
         (Constant (count operands))))))
 
