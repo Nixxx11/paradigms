@@ -37,6 +37,7 @@
   [diff [var-name] zero])
 (def zero (Constant 0))
 (def one (Constant 1))
+
 (defclass
   Variable
   _
@@ -45,19 +46,19 @@
   [evaluate [vars] (vars (__name this))]
   [diff [var-name] (if (= var-name (__name this)) one zero)])
 
-(defmethods getSymbol, calculate)
+(defmethods getSymbol, getFunction)
 (defclass
   AbstractOperation
   _
   [operands]
   [toString [] (str "(" (_getSymbol this) " " (clojure.string/join " " (map _toString (__operands this))) ")")]
-  [evaluate [vars] (_calculate this (map #(_evaluate % vars) (__operands this)))])
+  [evaluate [vars] (apply (_getFunction this) (map #(_evaluate % vars) (__operands this)))])
 
 (def object-map {})
 (defn make-operation-class [func symb diff]
   (let [OperationPrototype (assoc AbstractOperation_proto
                              :getSymbol (fn [this] symb)
-                             :calculate (fn [this nums] (apply func nums))
+                             :getFunction (fn [this] func)
                              :diff (fn [this var-name] (apply diff var-name (__operands this))))
         OperationConstructor (constructor (fn [this & operands] (assoc this :operands operands)) OperationPrototype)]
     (def object-map (assoc object-map (symbol symb) OperationConstructor))
@@ -100,6 +101,24 @@
     - "negate"
     (fn [var-name & operands]
       (apply Negate (map #(_diff % var-name) operands)))))
+
+(defn meansq-operator [& nums] (/ (apply + (map #(* % %) nums)) (count nums)))
+(defn rms-operator [& nums] (Math/sqrt (apply meansq-operator nums)))
+(def Meansq
+  (make-operation-class
+    meansq-operator "meansq"
+    (fn [var-name & operands]
+      (Multiply
+        (Constant (fixed-div 2 (count operands)))
+        (diff-from-coefficients var-name operands operands)))))
+(def RMS
+  (make-operation-class
+    rms-operator "rms"
+    (fn [var-name & operands]
+      (Divide
+        (diff-from-coefficients var-name operands operands)
+        (apply RMS operands)
+        (Constant (count operands))))))
 
 (defn make-parser [operations-map const-func var-func]
   (fn parse [expr] (cond
