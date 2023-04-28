@@ -33,8 +33,7 @@
 
 ; Macros
 
-(defn to-symbol [prefix name] (symbol (str prefix name)))
-
+(defn- to-symbol [& parts] (symbol (apply str parts)))
 (defmacro deffield
   "Defines field"
   [name]
@@ -59,7 +58,7 @@
   "Defines constructor"
   [name fields prototype]
   `(do
-     (deffields ~@(map symbol fields))
+     (deffields ~@fields)
      (defn ~name ~fields
        (assoc {:prototype ~prototype}
          ~@(mapcat (fn [f] [(keyword f) f]) fields)))))
@@ -67,19 +66,19 @@
 (defmacro defclass
   "Defines class"
   [name super fields & methods]
-  (let [-name (fn [suffix] (fn [class] (symbol (str class "_" suffix))))
-        proto-name (-name "proto")
-        fields-name (-name "fields")
+  (let [_name (fn [suffix] (fn [class] (to-symbol class "_" suffix)))
+        proto-name (_name "proto")
+        fields-name (_name "fields")
         method (fn [[name args body]] [(keyword name) `(fn [~'this ~@args] ~body)])
-        base-proto (if (= '_ super) {} {:prototype (proto-name super)})
-        prototype (apply assoc base-proto (mapcat method methods))
+        super-proto (if (= '_ super) {} {:prototype (proto-name super)})
+        prototype (apply assoc super-proto (mapcat method methods))
         public-prototype (proto-name name)
         public-fields (fields-name name)
         super-fields (if (= '_ super) [] (eval (fields-name super)))
         all-fields (into super-fields fields)]
     `(do
-       (defmethods ~@(map (comp symbol first) methods))
-       (deffields ~@(map symbol fields))
+       (defmethods ~@(map first methods))
+       (deffields ~@fields)
        (def ~public-prototype ~prototype)
        (def ~public-fields '~all-fields)
        (defconstructor ~name ~all-fields ~public-prototype))))
