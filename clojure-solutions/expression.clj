@@ -151,11 +151,12 @@
 (defn parseObject [string] (object-parser (read-string string)))
 
 (load-file "parser.clj")
-(def unary-map {"negate" Negate})
-(def priority2-map {"*" Multiply,
-                    "/" Divide})
-(def priority1-map {"+" Add,
-                    "-" Subtract})
+(def prioritized-maps [{"+" Add,
+                        "-" Subtract}
+                       {"*" Multiply,
+                        "/" Divide}
+                       {"negate" Negate}])
+(def priorities (count prioritized-maps))
 
 (def *all-chars (mapv char (range 0 128)))
 (defn *chars-filtered [f] (+char (apply str (filter f *all-chars))))
@@ -174,12 +175,12 @@
 
 (def *constant (+map Constant *number))
 (def *variable (+map (comp Variable str) (+char "xyz")))
-(def *const-or-var (+or *constant *variable))
-(def *unary-operator (+map unary-map (apply +or (map *char-seq (keys unary-map)))))
-(def *priority2-operator (+map priority2-map (apply +or (map *char-seq (keys priority2-map)))))
-(def *priority1-operator (+map priority1-map (apply +or (map *char-seq (keys priority1-map)))))
+(defn *prioritized-operator [priority]
+  (let [m (prioritized-maps priority)]
+    (+map m (apply +or (map *char-seq (keys m))))))
+(def prioritized-operators (mapv *prioritized-operator (range priorities)))
+(def *unary-operator (last prioritized-operators))
 
-(declare *any)
 (defn assemble-unary [Operator operand] (if (nil? Operator) operand
                                                             (Operator operand)))
 (defn infix-to-prefix [l-operand Operator r-operand] (Operator l-operand r-operand))
@@ -187,12 +188,19 @@
   (if (empty? pairs) l-operand
                      (recur (apply infix-to-prefix l-operand (first pairs)) (rest pairs))))
 
-(def *highest-priority (+or (+seqn 0 (+ignore (+char "(")) (delay *any) (+ignore (+char ")"))) *const-or-var))
-(def *priority3-operation (+seqf assemble-unary (+opt *unary-operator) *skip-ws (+or *highest-priority (delay *priority3-operation))))
-(def *priority2-operation (+seqf assemble-binary *priority3-operation (+star (+seq *skip-ws *priority2-operator *skip-ws *priority3-operation))))
-(def *priority1-operation (+seqf assemble-binary *priority2-operation (+star (+seq *skip-ws *priority1-operator *skip-ws *priority2-operation))))
-(def *any (+seqn 0 *skip-ws *priority1-operation *skip-ws))
-(def parseObjectInfix (+parser *any))
+(declare *any-expr, prioritized-operations)
+(defn *prioritized-binary-operation [priority]
+  (let [next-priority-operation (delay (prioritized-operations (inc priority)))]
+    (+seqf assemble-binary
+           next-priority-operation
+           (+star (+seq *skip-ws (prioritized-operators priority) *skip-ws next-priority-operation)))))
+(def *highest-priority (+or *constant *variable (+seqn 0 (+ignore (+char "(")) (delay *any-expr) (+ignore (+char ")")))))
+(def *unary-operation (+seqf assemble-unary (+opt *unary-operator) *skip-ws (+or *highest-priority (delay *unary-operation))))
+(def prioritized-operations (conj
+                              (mapv *prioritized-binary-operation (range (dec priorities)))
+                              *unary-operation))
+(def *any-expr (+seqn 0 *skip-ws (first prioritized-operations) *skip-ws))
+(def parseObjectInfix (+parser *any-expr))
 
 (def toString _toString)
 (def toStringInfix _toStringInfix)
