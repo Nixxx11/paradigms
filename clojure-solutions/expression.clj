@@ -37,6 +37,7 @@
   _
   [num]
   (toString [] (str (__num this)))
+  (toStringInfix [] (str (__num this)))
   (evaluate [vars] (__num this))
   (diff [var-name] zero))
 (def zero (Constant 0))
@@ -47,6 +48,7 @@
   _
   [name]
   (toString [] (__name this))
+  (toStringInfix [] (__name this))
   (evaluate [vars] (vars (__name this)))
   (diff [var-name] (if (= var-name (__name this)) one zero)))
 
@@ -56,6 +58,15 @@
   _
   [operands]
   (toString [] (str "(" (_getSymbol this) " " (clojure.string/join " " (map _toString (__operands this))) ")"))
+  (toStringInfix [] (let [operands (__operands this)]
+                      (cond
+                        (= 2 (count operands))
+                        (let [[left right] operands]
+                          (str "(" (_toStringInfix left) " " (_getSymbol this) " " (_toStringInfix right) ")"))
+                        (= 1 (count operands))
+                        (let [[operand] operands]
+                          (str (_getSymbol this) "(" (_toStringInfix operand) ")"))
+                        :else (_toString this))))
   (evaluate [vars] (apply (_getFunction this) (map #(_evaluate % vars) (__operands this))))
   (diff [var-name] (let [operands (__operands this)]
                      ((_getDiff this) operands (map #(_diff % var-name) operands)))))
@@ -92,16 +103,16 @@
 (def Divide
   (make-operation-class
     fixed-div "/"
-    (fn divide-diff [operands diffs]
+    (fn [operands diffs]
       (cond (= (count operands) 0) (zero)
-            (= (count operands) 1) (divide-diff
+            (= (count operands) 1) (recur
                                      [one (first operands)]
                                      [zero (first diffs)])
             (= (count operands) 2) (let [[dividend divisor] operands]
                                      (add-mul
                                        [(Divide divisor) (Negate (Divide dividend (Multiply divisor divisor)))]
                                        diffs))
-            :else (divide-diff
+            :else (recur
                     [(first operands) (apply Multiply (rest operands))]
                     [(first diffs) (multiply-diff (rest operands) (rest diffs))])))))
 
@@ -139,6 +150,51 @@
 (defn parseFunction [string] (function-parser (read-string string)))
 (defn parseObject [string] (object-parser (read-string string)))
 
+(load-file "parser.clj")
+(def unary-map {"negate" Negate})
+(def priority2-map {"*" Multiply,
+                    "/" Divide})
+(def priority1-map {"+" Add,
+                    "-" Subtract})
+
+(def *all-chars (mapv char (range 0 128)))
+(defn *chars-filtered [f] (+char (apply str (filter f *all-chars))))
+; (def *letter (*chars-filtered #(Character/isLetter %)))
+(def *digit (*chars-filtered #(Character/isDigit %)))
+(def *space (*chars-filtered #(Character/isWhitespace %)))
+(def *skip-ws (+ignore (+star *space)))
+; (def *identifier (+str (+or (+seqf cons *letter (+star (+or *letter *digit))) (+char "+-*/"))))
+(def *digits (+str (+plus *digit)))
+(def *seq-str (comp +str +seq))
+(def *number (+map read-string (*seq-str
+                                 (+opt (+char "+-"))
+                                 *digits
+                                 (+opt (*seq-str (+char ".") *digits)))))
+(defn *char-seq [chars] (apply *seq-str (map (comp +char str) chars)))
+
+(def *constant (+map Constant *number))
+(def *variable (+map (comp Variable str) (+char "xyz")))
+(def *const-or-var (+or *constant *variable))
+(def *unary-operator (+map unary-map (apply +or (map *char-seq (keys unary-map)))))
+(def *priority2-operator (+map priority2-map (apply +or (map *char-seq (keys priority2-map)))))
+(def *priority1-operator (+map priority1-map (apply +or (map *char-seq (keys priority1-map)))))
+
+(declare *any)
+(defn assemble-unary [Operator operand] (if (nil? Operator) operand
+                                                            (Operator operand)))
+(defn infix-to-prefix [l-operand Operator r-operand] (Operator l-operand r-operand))
+(defn assemble-binary [l-operand pairs]
+  (if (empty? pairs) l-operand
+                     (recur (apply infix-to-prefix l-operand (first pairs)) (rest pairs))))
+
+(def *highest-priority (+or (+seqn 0 (+ignore (+char "(")) (delay *any) (+ignore (+char ")"))) *const-or-var))
+(def *priority3-operation (+seqf assemble-unary (+opt *unary-operator) *skip-ws (+or *highest-priority (delay *priority3-operation))))
+(def *priority2-operation (+seqf assemble-binary *priority3-operation (+star (+seq *skip-ws *priority2-operator *skip-ws *priority3-operation))))
+(def *priority1-operation (+seqf assemble-binary *priority2-operation (+star (+seq *skip-ws *priority1-operator *skip-ws *priority2-operation))))
+(def *any (+seqn 0 *skip-ws *priority1-operation *skip-ws))
+(def parseObjectInfix (+parser *any))
+
 (def toString _toString)
+(def toStringInfix _toStringInfix)
 (def evaluate _evaluate)
 (def diff _diff)
