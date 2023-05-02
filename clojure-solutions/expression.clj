@@ -49,7 +49,7 @@
   [name]
   (toString [] (__name this))
   (toStringInfix [] (__name this))
-  (evaluate [vars] (vars (__name this)))
+  (evaluate [vars] (vars (clojure.string/lower-case (subs (__name this) 0 1))))
   (diff [var-name] (if (= var-name (__name this)) one zero)))
 
 (defmethods getSymbol, getFunction, getDiff)
@@ -139,6 +139,24 @@
         (add-mul operands diffs)
         (apply RMS operands)
         (Constant (count operands))))))
+(def undefined (constantly nil))
+(defn make-special-boolean [boolean] (fn [& args] (if (apply boolean (map pos? args)) 1 0)))
+(def And
+  (make-operation-class
+    (make-special-boolean #(and %1 %2)) "&&"
+    undefined))
+(def Or
+  (make-operation-class
+    (make-special-boolean #(or %1 %2)) "||"
+    undefined))
+(def Xor
+  (make-operation-class
+    (make-special-boolean not=) "^^"
+    undefined))
+(def Not
+  (make-operation-class
+    (make-special-boolean not) "not"
+    undefined))
 
 (defn make-parser [operations-map const-func var-func]
   (fn parse [expr] (cond
@@ -158,11 +176,15 @@
         result))))
 (def +parse-if _parse-if)
 
-(def prioritized-maps [{"+" Add,
+(def prioritized-maps [{"^^" Xor}
+                       {"||" Or}
+                       {"&&" And}
+                       {"+" Add,
                         "-" Subtract}
                        {"*" Multiply,
                         "/" Divide}
-                       {"negate" Negate}])
+                       {"negate" Negate
+                        "not"    Not}])
 (def priorities (count prioritized-maps))
 
 (def *all-chars (mapv char (range 0 128)))
@@ -171,19 +193,19 @@
 (def *skip-ws (+ignore (+star *space)))
 (def *letter (*chars-filtered #(Character/isLetter %)))
 (def *digit (*chars-filtered #(Character/isDigit %)))
-(def *digits (+str (+plus *digit)))
 (def *identifier (+str (+seqf cons *letter (+star (+or *letter *digit)))))
 (def *char-to-str (comp (partial +map str) +char))
 (def *seq-str (comp +str +seq))
+(def *str-plus (comp +str +plus))
 (def *number (+map read-string (*seq-str
                                  (+opt (+char "+-"))
-                                 *digits
-                                 (+opt (*seq-str (+char ".") *digits)))))
+                                 (*str-plus *digit)
+                                 (+opt (*seq-str (+char ".") (*str-plus *digit))))))
 
 (def *constant (+map Constant *number))
-(def *variable (+map Variable (*char-to-str "xyz")))
+(def *variable (+map Variable (*str-plus (+char "xyzXYZ"))))
 (defn *prioritized-operator [priority]
-  (+parse-if some? (+map (prioritized-maps priority) (+or *identifier (*char-to-str "+-*/")))))
+  (+parse-if some? (+map (prioritized-maps priority) (+or *identifier (*str-plus (+char "+*/&|^")) (*char-to-str "-")))))
 (def prioritized-operators (mapv *prioritized-operator (range priorities)))
 (def *unary-operator (last prioritized-operators))
 
