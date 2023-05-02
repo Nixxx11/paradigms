@@ -151,6 +151,13 @@
 (defn parseObject [string] (object-parser (read-string string)))
 
 (load-file "parser.clj")
+(defn _parse-if [predicate parser]
+  (fn [str]
+    (let [result (parser str)]
+      (if (and (-valid? result) (predicate (-value result)))
+        result))))
+(def +parse-if _parse-if)
+
 (def prioritized-maps [{"+" Add,
                         "-" Subtract}
                        {"*" Multiply,
@@ -160,24 +167,23 @@
 
 (def *all-chars (mapv char (range 0 128)))
 (defn *chars-filtered [f] (+char (apply str (filter f *all-chars))))
-; (def *letter (*chars-filtered #(Character/isLetter %)))
-(def *digit (*chars-filtered #(Character/isDigit %)))
 (def *space (*chars-filtered #(Character/isWhitespace %)))
 (def *skip-ws (+ignore (+star *space)))
-; (def *identifier (+str (+or (+seqf cons *letter (+star (+or *letter *digit))) (+char "+-*/"))))
+(def *letter (*chars-filtered #(Character/isLetter %)))
+(def *digit (*chars-filtered #(Character/isDigit %)))
 (def *digits (+str (+plus *digit)))
+(def *identifier (+str (+seqf cons *letter (+star (+or *letter *digit)))))
+(def *char-to-str (comp (partial +map str) +char))
 (def *seq-str (comp +str +seq))
 (def *number (+map read-string (*seq-str
                                  (+opt (+char "+-"))
                                  *digits
                                  (+opt (*seq-str (+char ".") *digits)))))
-(defn *char-seq [chars] (apply *seq-str (map (comp +char str) chars)))
 
 (def *constant (+map Constant *number))
-(def *variable (+map (comp Variable str) (+char "xyz")))
+(def *variable (+map Variable (*char-to-str "xyz")))
 (defn *prioritized-operator [priority]
-  (let [m (prioritized-maps priority)]
-    (+map m (apply +or (map *char-seq (keys m))))))
+  (+parse-if some? (+map (prioritized-maps priority) (+or *identifier (*char-to-str "+-*/")))))
 (def prioritized-operators (mapv *prioritized-operator (range priorities)))
 (def *unary-operator (last prioritized-operators))
 
