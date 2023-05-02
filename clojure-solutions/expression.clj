@@ -155,7 +155,7 @@
     undefined))
 (def Not
   (make-operation-class
-    (make-special-boolean not) "not"
+    (make-special-boolean not) "!"
     undefined))
 
 (defn make-parser [operations-map const-func var-func]
@@ -184,7 +184,7 @@
                        {"*" Multiply,
                         "/" Divide}
                        {"negate" Negate
-                        "not"    Not}])
+                        "!"    Not}])
 (def priorities (count prioritized-maps))
 
 (def *all-chars (mapv char (range 0 128)))
@@ -205,7 +205,7 @@
 (def *constant (+map Constant *number))
 (def *variable (+map Variable (*str-plus (+char "xyzXYZ"))))
 (defn *prioritized-operator [priority]
-  (+parse-if some? (+map (prioritized-maps priority) (+or *identifier (*str-plus (+char "+*/&|^")) (*char-to-str "-")))))
+  (+parse-if some? (+map (prioritized-maps priority) (+or *identifier (*str-plus (+char "+*/&|^")) (*char-to-str "-") (*char-to-str "!")))))
 (def prioritized-operators (mapv *prioritized-operator (range priorities)))
 (def *unary-operator (last prioritized-operators))
 
