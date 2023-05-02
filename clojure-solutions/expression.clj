@@ -58,12 +58,12 @@
   _
   [operands]
   (toString [] (str "(" (_getSymbol this) " " (clojure.string/join " " (map _toString (__operands this))) ")"))
-  (toStringInfix [] (let [operands (__operands this)]
+  (toStringInfix [] (let [operands (__operands this) length (count operands)]
                       (cond
-                        (= 2 (count operands))
+                        (= 2 length)
                         (let [[left right] operands]
                           (str "(" (_toStringInfix left) " " (_getSymbol this) " " (_toStringInfix right) ")"))
-                        (= 1 (count operands))
+                        (= 1 length)
                         (let [[operand] operands]
                           (str (_getSymbol this) "(" (_toStringInfix operand) ")"))
                         :else (_toString this))))
