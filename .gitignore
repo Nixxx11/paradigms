@@ -14,6 +14,7 @@ _*
 /java/
 /javascript/
 /clojure/
+/prolog/
 
 # Do not store idea project file
 /paradigms.iml
