@@ -19,6 +19,33 @@ prime_divisors(N, [Lowest_divisor | Rest_divisors]) :-
 		composites_table(Product, Lowest_divisor),
 		N = Product, !.
 
+first(N, [N | _]).
+
+convert_to_pairs([], []).
+
+convert_to_pairs([First | Rest], [(First, 1) | Rest_p]) :-
+		convert_to_pairs(Rest, Rest_p), 
+		\+ first(First, Rest), !.
+
+convert_to_pairs([First | Rest], [(First, Count) | Rest_p]) :-
+		number(First),
+		convert_to_pairs(Rest, [(First, Count1) | Rest_p]),
+		Count is Count1 + 1, !.
+
+convert_to_pairs([First | Rest], [(First, Count) | Rest_p]) :-
+		number(Count),
+		Count1 is Count - 1,
+		convert_to_pairs(Rest, [(First, Count1) | Rest_p]).
+
+compact_prime_divisors(N, CDs) :- 
+		number(N),
+		prime_divisors(N, D), 
+		convert_to_pairs(D, CDs), !.
+
+compact_prime_divisors(N, CDs) :- 
+		convert_to_pairs(D, CDs),
+		prime_divisors(N, D), !.
+
 update_table(Prime, Composite, Limit) :- Composite > Limit, !.
 
 update_table(Prime, Composite, Limit) :-
