@@ -16,34 +16,31 @@ prime_divisors(N, [Lowest_divisor | Rest_divisors]) :-
 	N is Quotient * Lowest_divisor,
 	lowest_prime_divisor(N, Lowest_divisor).
 
-% :NOTE: split
 convert_to_pairs([], []).
 convert_to_pairs([First, First | Rest], [(First, Count) | Rest_p]) :-
-	\+ number(Count), !,
-	convert_to_pairs([First | Rest], [(First, Count1) | Rest_p]),
+	!, convert_to_pairs([First | Rest], [(First, Count1) | Rest_p]),
 	Count is Count1 + 1.
-convert_to_pairs([First, First | Rest], [(First, Count) | Rest_p]) :-
-	Count \== 1, !,
-	Count1 is Count - 1,
-	convert_to_pairs([First | Rest], [(First, Count1) | Rest_p]).
 convert_to_pairs([First | Rest], [(First, 1) | Rest_p]) :- convert_to_pairs(Rest, Rest_p).
+
+convert_to_list([], []).
+convert_to_list([First | Rest], [(First, 1) | Rest_p]) :- !, convert_to_list(Rest, Rest_p).
+convert_to_list([First | Rest], [(First, Count) | Rest_p]) :-
+	Count1 is Count - 1,
+	convert_to_list(Rest, [(First, Count1) | Rest_p]).
 
 compact_prime_divisors(N, CDs) :- 
 	number(N), !,
 	prime_divisors(N, D),
 	convert_to_pairs(D, CDs).
 compact_prime_divisors(N, CDs) :- 
-	convert_to_pairs(D, CDs),
+	convert_to_list(D, CDs),
 	prime_divisors(N, D).
 
-% :NOTE: refactor
-assert_new(Composite, Prime) :-
-	\+ composites_with_divisor(Composite, _), !,
-	assert(composites_with_divisor(Composite, Prime)).
-assert_new(_, _).
+assert_new(Composite, _) :- composites_with_divisor(Composite, _), !.
+assert_new(Composite, Prime) :- assert(composites_with_divisor(Composite, Prime)).
 
+update_table(_, Composite, Limit) :- Composite > Limit, !.
 update_table(Prime, Composite, Limit) :-
-	Composite =< Limit,
 	assert_new(Composite, Prime),
 	Composite1 is Composite + Prime,
 	update_table(Prime, Composite1, Limit).
