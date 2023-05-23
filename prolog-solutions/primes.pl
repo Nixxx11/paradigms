@@ -16,6 +16,7 @@ prime_divisors(N, [Lowest_divisor | Rest_divisors]) :-
 	N is Quotient * Lowest_divisor,
 	lowest_prime_divisor(N, Lowest_divisor).
 
+% :NOTE: split
 convert_to_pairs([], []).
 convert_to_pairs([First, First | Rest], [(First, Count) | Rest_p]) :-
 	\+ number(Count), !,
@@ -35,9 +36,10 @@ compact_prime_divisors(N, CDs) :-
 	convert_to_pairs(D, CDs),
 	prime_divisors(N, D).
 
+% :NOTE: refactor
 assert_new(Composite, Prime) :-
-	\+ composites_with_divisor(Composite, _),
-	assert(composites_with_divisor(Composite, Prime)), !.
+	\+ composites_with_divisor(Composite, _), !,
+	assert(composites_with_divisor(Composite, Prime)).
 assert_new(_, _).
 
 update_table(Prime, Composite, Limit) :-
@@ -46,11 +48,10 @@ update_table(Prime, Composite, Limit) :-
 	Composite1 is Composite + Prime,
 	update_table(Prime, Composite1, Limit).
 
+update_table_if_prime(I, _) :- composites_with_divisor(I, _), !.
 update_table_if_prime(I, Limit) :-
-	\+ composites_with_divisor(I, _),
 	Square is I * I,
-	update_table(I, Square, Limit), !.
-update_table_if_prime(_, _).
+	update_table(I, Square, Limit).
 
 update_table_iterative(I, Limit, Limit_sqrt) :-
 	I =< Limit_sqrt,
