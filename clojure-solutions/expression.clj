@@ -65,7 +65,7 @@
                           (str "(" (_toStringInfix left) " " (_getSymbol this) " " (_toStringInfix right) ")"))
                         (= 1 length)
                         (let [[operand] operands]
-                          (str (_getSymbol this) "(" (_toStringInfix operand) ")"))
+                          (str (_getSymbol this) " " (_toStringInfix operand)))
                         :else (_toString this))))
   (evaluate [vars] (apply (_getFunction this) (map #(_evaluate % vars) (__operands this))))
   (diff [var-name] (let [operands (__operands this)]
