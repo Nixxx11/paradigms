@@ -67,11 +67,11 @@ expr_p(const(Value), _) -->
 number_p([Sign | Digits]) -->
 	{ member(Sign, ['+', '-']) },
 	[Sign], digits_with_point_p(Digits, true),
-	{ Digits = [_ | _] }.
-number_p(Digits) --> digits_with_point_p(Digits, true), { Digits = [_ | _] }.
+	{ Digits = [_ | _], Digits \= ['.'] }.
+number_p(Digits) --> digits_with_point_p(Digits, true), { Digits = [_ | _], Digits \= ['.'] }.
 
 digits_with_point_p([], _) --> [].
-digits_with_point_p(['.' | T], true) --> { T = [_ | _] }, ['.'], digits_with_point_p(T, fail).
+digits_with_point_p(['.' | T], true) --> ['.'], digits_with_point_p(T, fail).
 digits_with_point_p([H | T], Point) -->
 	{ member(H, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']) },
 	[H], digits_with_point_p(T, Point).
