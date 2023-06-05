@@ -67,13 +67,14 @@
    :post [(is-vector? %) (equal-sized? m %)]}
   (mapv (partial scalar v) m))
 
+(defn multiplyable? [previous remaining] (cond
+                                           (empty? remaining) true
+                                           (not (m-width==v-height? previous (first remaining))) false
+                                           :else (recur (first remaining) (rest remaining))))
+
 (defn m*m [m & ms]
   {:pre  [(is-matrix? m) (every? is-matrix? ms)
-          ((fn [previous remaining] (cond
-                                      (empty? remaining) true
-                                      (not (m-width==v-height? previous (first remaining))) false
-                                      :else (recur (first remaining) (rest remaining))))
-           m ms)]
+          (multiplyable? m ms)]
    :post [(is-matrix? %) (equal-sized? m %) (equal-sized? (first (last (cons m ms))) (first %))]}
   (reduce #(mapv (partial m*v (transpose %2)) %1) m ms))
 
