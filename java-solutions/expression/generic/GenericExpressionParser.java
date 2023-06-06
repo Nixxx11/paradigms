@@ -79,8 +79,9 @@ public class GenericExpressionParser<T extends Number> extends BaseParser {
         } else {
             token = getToken();
         }
-        if (unaryOperations.containsKey(token)) { // :NOTE: .get
-            return new GenericUnaryExpression<>(getOperand(), unaryOperations.get(token));
+        final OperatorUnary<T> unaryOperator = unaryOperations.get(token);
+        if (unaryOperator != null) {
+            return new GenericUnaryExpression<>(getOperand(), unaryOperator);
         }
         return switch (token) {
             case "x", "y", "z" -> new GenericVariable<>(token);

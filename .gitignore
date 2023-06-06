@@ -21,7 +21,3 @@ _*
 
 # Do not store out
 /out/
-
-/java-solutions/expression/DoubleExpression.java
-/java-solutions/expression/Expression.java
-/java-solutions/expression/parser/TripleParser.java
